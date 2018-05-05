@@ -42,7 +42,7 @@ class SpanStore {
         return spans.get(spanId);
     }
 
-    Map<String, SpanContext> getSpanContext(String spanId) {
+    Map<String, SpanContext> getSpanContextMap(String spanId) {
         return spanContexts.get(spanId);
     }
 
@@ -59,7 +59,7 @@ class SpanStore {
         return spans.remove(spanId);
     }
 
-    public void addSpanContext(String spanId, Map<String, SpanContext> spanContextMap) {
+    public void addSpanContextMap(String spanId, Map<String, SpanContext> spanContextMap) {
         spanContexts.put(spanId, spanContextMap);
     }
 }

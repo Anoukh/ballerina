@@ -123,7 +123,7 @@ public class OpenTracerBallerinaWrapper {
     public String startSpan(String serviceName, String spanName, Map<String, String> tags, ReferenceType referenceType,
                             String parentSpanId) {
         if (enabled) {
-            return startSpan(serviceName, spanName, tags, referenceType, spanStore.getSpanContext(parentSpanId));
+            return startSpan(serviceName, spanName, tags, referenceType, spanStore.getSpanContextMap(parentSpanId));
         } else {
             return null;
         }
@@ -163,7 +163,7 @@ public class OpenTracerBallerinaWrapper {
 
             String spanId = UUID.randomUUID().toString();
             spanStore.addSpan(spanId, spanMap);
-            spanStore.addSpanContext(spanId, spanContextMap);
+            spanStore.addSpanContextMap(spanId, spanContextMap);
             return spanId;
         } else {
             return null;
