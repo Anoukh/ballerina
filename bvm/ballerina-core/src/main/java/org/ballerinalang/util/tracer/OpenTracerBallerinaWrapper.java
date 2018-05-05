@@ -162,8 +162,8 @@ public class OpenTracerBallerinaWrapper {
             });
 
             String spanId = UUID.randomUUID().toString();
-            spanStore.addSpanMap(spanId, spanMap);
-            spanStore.addSpanContextMap(spanId, spanContextMap);
+            spanStore.addSpan(spanId, spanMap);
+            spanStore.addSpanContext(spanId, spanContextMap);
             return spanId;
         } else {
             return null;
