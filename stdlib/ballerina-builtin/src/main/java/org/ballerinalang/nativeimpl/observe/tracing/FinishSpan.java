@@ -44,7 +44,6 @@ public class FinishSpan extends BlockingNativeCallableUnit {
         BStruct span = (BStruct) context.getRefArgument(0);
         String spanId = span.getStringField(0);
         span.setBooleanField(0, 1);
-        InvocationContext invocationContext = InvocationContextUtils.getInvocationContext(context);
-        OpenTracerBallerinaWrapper.getInstance().finishSpan(invocationContext.getId(), spanId);
+        OpenTracerBallerinaWrapper.getInstance().finishSpan(spanId, context);
     }
 }
