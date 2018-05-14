@@ -58,10 +58,10 @@ public class OpenTracerBallerinaWrapper {
      * @param serviceName name of the service the span should belong to
      * @param spanName    name of the span
      * @param tags        key value paired tags to attach to the span
+     * @param context     native context
      * @return unique id of the created span
      */
-    public String startSpan(String serviceName, String spanName, Map<String, String> tags,
-                            Context context) {
+    public String startSpan(String serviceName, String spanName, Map<String, String> tags, Context context) {
         if (!enabled) {
             return null;
         }
@@ -105,7 +105,8 @@ public class OpenTracerBallerinaWrapper {
     /**
      * Method to mark a span as finished.
      *
-     * @param spanId the id of the span to finish
+     * @param spanId  the id of the span to finish
+     * @param context native context
      */
     public void finishSpan(String spanId, Context context) {
         if (enabled) {
@@ -122,6 +123,7 @@ public class OpenTracerBallerinaWrapper {
      * @param spanId   the id of the span
      * @param tagKey   the key of the tag
      * @param tagValue the value of the tag
+     * @param context  native context
      */
     public void addTags(String spanId, String tagKey, String tagValue, Context context) {
         if (enabled) {
