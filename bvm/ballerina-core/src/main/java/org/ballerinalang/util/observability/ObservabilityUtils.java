@@ -20,6 +20,7 @@ package org.ballerinalang.util.observability;
 import org.ballerinalang.bre.Context;
 import org.ballerinalang.bre.bvm.WorkerExecutionContext;
 import org.ballerinalang.config.ConfigRegistry;
+import org.ballerinalang.util.codegen.ServiceInfo;
 import org.ballerinalang.util.tracer.BSpan;
 
 import java.util.ArrayList;
@@ -127,6 +128,12 @@ public class ObservabilityUtils {
         ctx.setConnectorName(connectorName);
         ctx.setActionName(actionName);
         if (parentCtx != null) {
+            ServiceInfo serviceInfo = (ServiceInfo) parentCtx.globalProps.get("SERVICE_INFO");
+            if (serviceInfo != null) {
+                ctx.setServiceName(serviceInfo.getType().toString());
+            } else {
+                ctx.setServiceName("BallerinaMain");
+            }
             continueClientObservation(ctx, parentCtx);
         }
         return Optional.of(ctx);

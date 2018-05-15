@@ -18,21 +18,22 @@
 
 package org.ballerinalang.nativeimpl.observe.tracing;
 
-import io.opentracing.Span;
 import io.opentracing.Tracer;
 import org.ballerinalang.bre.Context;
 import org.ballerinalang.config.ConfigRegistry;
 import org.ballerinalang.util.observability.ObservabilityUtils;
 import org.ballerinalang.util.observability.ObserverContext;
-import org.ballerinalang.util.tracer.TraceConstants;
+import org.ballerinalang.util.observability.TracingUtils;
+import org.ballerinalang.util.tracer.BSpan;
 import org.ballerinalang.util.tracer.TracersStore;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.UUID;
 
 import static org.ballerinalang.util.observability.ObservabilityConstants.CONFIG_TRACING_ENABLED;
-import static org.ballerinalang.util.tracer.TraceConstants.KEY_USER_SPAN;
+import static org.ballerinalang.util.tracer.TraceConstants.KEY_SPAN;
 
 /**
  * This class wraps opentracing apis and exposes native functions to use within ballerina.
@@ -42,10 +43,12 @@ public class OpenTracerBallerinaWrapper {
     private static OpenTracerBallerinaWrapper instance = new OpenTracerBallerinaWrapper();
     private TracersStore tracerStore;
     private final boolean enabled;
+    private Map<String, ObserverContext> activeObserverContexts;
 
     public OpenTracerBallerinaWrapper() {
         enabled = ConfigRegistry.getInstance().getAsBoolean(CONFIG_TRACING_ENABLED);
         tracerStore = TracersStore.getInstance();
+        activeObserverContexts = new HashMap();
     }
 
     public static OpenTracerBallerinaWrapper getInstance() {
@@ -62,44 +65,35 @@ public class OpenTracerBallerinaWrapper {
      * @return unique id of the created span
      */
     public String startSpan(String serviceName, String spanName, Map<String, String> tags, Context context) {
+
         if (!enabled) {
             return null;
         }
-
         Tracer tracer = tracerStore.getTracer(serviceName);
         if (tracer == null) {
             return null;
         }
 
-        Tracer.SpanBuilder spanBuilder = tracer.buildSpan(spanName);
-        for (Map.Entry<String, String> tag : tags.entrySet()) {
-            spanBuilder.withTag(tag.getKey(), tag.getValue());
-        }
-        AtomicReference<SpanStore> spanStore = new AtomicReference<>(
-                (SpanStore) context.getParentWorkerExecutionContext().localProps.get(KEY_USER_SPAN));
-        BSpan parentSpan = null;
-        if (spanStore.get() != null) {
-            parentSpan = spanStore.get().getActiveBSpan();
-            if (parentSpan != null) {
-                spanBuilder.asChildOf(parentSpan.getSpan());
-            }
-        } else {
-            Optional<ObserverContext> optionalObserverContext = ObservabilityUtils.getParentContext(context);
-            optionalObserverContext.ifPresent(observerContext -> {
-                spanStore.set(new SpanStore());
-                org.ballerinalang.util.tracer.BSpan bSpan =
-                        (org.ballerinalang.util.tracer.BSpan) observerContext.getProperty(TraceConstants.KEY_SPAN);
-                if (bSpan != null) {
-                    spanBuilder.asChildOf(bSpan.getSpan());
-                }
-            });
-        }
-        Span span = spanBuilder.start();
-        BSpan bSpan = new BSpan(span, parentSpan);
-        spanStore.get().addSpan(bSpan);
-        context.getParentWorkerExecutionContext().localProps.put(KEY_USER_SPAN, spanStore.get());
-        return bSpan.getSpanId();
+        ObserverContext observerContext = new ObserverContext();
+        observerContext.setServiceName(serviceName);
+        observerContext.setConnectorName(serviceName);
+        observerContext.setActionName(spanName);
 
+        Optional<ObserverContext> optionalParentContext = ObservabilityUtils.getParentContext(context);
+        optionalParentContext.ifPresent(parentContext -> {
+            BSpan bSpan = (BSpan) parentContext.getProperty(KEY_SPAN);
+            if (bSpan != null) {
+                observerContext.setParent(parentContext);
+                observerContext.addProperty(KEY_SPAN, new BSpan(observerContext, true));
+            }
+        });
+
+        TracingUtils.startObservation(observerContext, true);
+        ObservabilityUtils.setObserverContextToWorkerExecutionContext(
+                context.getParentWorkerExecutionContext(), observerContext);
+        String spanId = UUID.randomUUID().toString();
+        activeObserverContexts.put(spanId, observerContext);
+        return spanId;
     }
 
     /**
@@ -110,10 +104,10 @@ public class OpenTracerBallerinaWrapper {
      */
     public void finishSpan(String spanId, Context context) {
         if (enabled) {
-            SpanStore spanStore =
-                    (SpanStore) context.getParentWorkerExecutionContext().localProps.get(KEY_USER_SPAN);
-            BSpan bSpan = spanStore.finishAndRemoveSpan(spanId);
-            bSpan.getSpan().finish();
+            ObserverContext observerContext = activeObserverContexts.remove(spanId);
+            TracingUtils.stopObservation(observerContext);
+            ObservabilityUtils.setObserverContextToWorkerExecutionContext(
+                    context.getParentWorkerExecutionContext(), observerContext.getParent());
         }
     }
 
@@ -123,13 +117,10 @@ public class OpenTracerBallerinaWrapper {
      * @param spanId   the id of the span
      * @param tagKey   the key of the tag
      * @param tagValue the value of the tag
-     * @param context  native context
      */
-    public void addTags(String spanId, String tagKey, String tagValue, Context context) {
+    public void addTags(String spanId, String tagKey, String tagValue) {
         if (enabled) {
-            SpanStore spanStore =
-                    (SpanStore) context.getParentWorkerExecutionContext().localProps.get(KEY_USER_SPAN);
-            spanStore.getSpan(spanId).getSpan().setTag(tagKey, tagValue);
+            activeObserverContexts.get(spanId).addTag(tagKey, tagValue);
         }
     }
 }
