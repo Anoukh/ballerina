@@ -66,7 +66,7 @@ public class BSpan {
      */
     private Span span;
 
-    BSpan(ObserverContext observerContext, boolean isClientContext) {
+    public BSpan(ObserverContext observerContext, boolean isClientContext) {
         this.properties = new HashMap<>();
         this.tags = new HashMap<>();
         this.observerContext = observerContext;
