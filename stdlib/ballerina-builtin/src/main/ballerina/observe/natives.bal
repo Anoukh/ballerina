@@ -15,6 +15,42 @@
 // under the License.
 
 documentation {
+    Counter metric, to track counts of events or running totals.
+}
+public type Counter object {
+    private {
+        string name;
+        string description;
+        map? tags;
+    }
+
+    documentation {
+        Increment the counter by one or by the given amount.
+
+        P{{amount}} the amount by which the counter will be increased.
+    }
+    public native function increment(int amount = 1);
+
+    documentation {
+        Returns the counter's current value.
+
+        R{{value}} the counter's current value.
+    }
+    public native function value() returns (int);
+};
+
+documentation {
+    Get a Counter instance using name and tags.
+
+    P{{name}} The name of the counter.
+    P{{tags}} Key/value pairs used to classify counter.
+    P{{description}} The description string of the metric.
+    R{{Counter}} An instance of the counter
+}
+public native function getCounterInstance(string name, map<string>? tags = (), string description = "")
+                           returns Counter|error;
+
+documentation {
     Represents a span
     F{{spanId}} unique Id to identify a span
     F{{isFinished}} mark a span as finished
