@@ -132,7 +132,7 @@ public class ObservabilityUtils {
             if (serviceInfo != null) {
                 ctx.setServiceName(serviceInfo.getType().toString());
             } else {
-                ctx.setServiceName("BallerinaMain");
+                ctx.setServiceName("Unknown Service");
             }
             continueClientObservation(ctx, parentCtx);
         }

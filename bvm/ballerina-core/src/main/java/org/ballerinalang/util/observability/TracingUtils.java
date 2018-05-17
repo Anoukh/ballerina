@@ -43,6 +43,8 @@ import static org.ballerinalang.util.tracer.TraceConstants.LOG_KEY_MESSAGE;
  */
 public class TracingUtils {
 
+    public static final String SEPARATOR = ":";
+
     private TracingUtils() {
     }
 
@@ -54,13 +56,15 @@ public class TracingUtils {
      */
     public static void startObservation(ObserverContext observerContext, boolean isClient) {
         BSpan span = new BSpan(observerContext, isClient);
-        if (isClient) {
-            span.setConnectorName(observerContext.getServiceName());
-            span.setActionName(observerContext.getConnectorName() + ":" + observerContext.getActionName());
-            observerContext.addProperty(PROPERTY_TRACE_PROPERTIES, span.getProperties());
+        span.setConnectorName(observerContext.getServiceName() != null ?
+                observerContext.getServiceName() : "Unknown Service");
 
+        if (isClient) {
+            span.setActionName(observerContext.getConnectorName() != null ?
+                    observerContext.getConnectorName() + SEPARATOR + observerContext.getActionName()
+                    : observerContext.getActionName());
+            observerContext.addProperty(PROPERTY_TRACE_PROPERTIES, span.getProperties());
         } else {
-            span.setConnectorName(observerContext.getServiceName());
             span.setActionName(observerContext.getResourceName());
             Map<String, String> httpHeaders =
                     (Map<String, String>) observerContext.getProperty(PROPERTY_TRACE_PROPERTIES);

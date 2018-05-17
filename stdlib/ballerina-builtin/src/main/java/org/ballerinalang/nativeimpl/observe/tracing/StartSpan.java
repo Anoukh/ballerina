@@ -50,8 +50,9 @@ public class StartSpan extends BlockingNativeCallableUnit {
         String serviceName = context.getStringArgument(0);
         String spanName = context.getStringArgument(1);
         BMap tags = (BMap) context.getNullableRefArgument(0);
+        boolean userTrace = context.getBooleanArgument(0);
         ObserverContext observerContext = OpenTracerBallerinaWrapper.getInstance()
-                .startSpan(serviceName, spanName, Utils.toStringMap(tags), context);
+                .startSpan(serviceName, spanName, Utils.toStringMap(tags), userTrace, context);
         context.setReturnValues(Utils.createSpanStruct(context, observerContext));
     }
 }
