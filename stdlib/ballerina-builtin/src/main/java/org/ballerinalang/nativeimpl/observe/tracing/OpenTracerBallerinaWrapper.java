@@ -20,6 +20,7 @@ package org.ballerinalang.nativeimpl.observe.tracing;
 
 import io.opentracing.Tracer;
 import org.ballerinalang.bre.Context;
+import org.ballerinalang.bre.bvm.WorkerExecutionContext;
 import org.ballerinalang.config.ConfigRegistry;
 import org.ballerinalang.util.observability.ObservabilityUtils;
 import org.ballerinalang.util.observability.ObserverContext;
@@ -27,13 +28,14 @@ import org.ballerinalang.util.observability.TracingUtils;
 import org.ballerinalang.util.tracer.BSpan;
 import org.ballerinalang.util.tracer.TracersStore;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.ballerinalang.util.observability.ObservabilityConstants.CONFIG_TRACING_ENABLED;
 import static org.ballerinalang.util.tracer.TraceConstants.KEY_SPAN;
+import static org.ballerinalang.util.tracer.TraceConstants.KEY_USER_SPAN;
 
 /**
  * This class wraps opentracing apis and exposes native functions to use within ballerina.
@@ -43,12 +45,10 @@ public class OpenTracerBallerinaWrapper {
     private static OpenTracerBallerinaWrapper instance = new OpenTracerBallerinaWrapper();
     private TracersStore tracerStore;
     private final boolean enabled;
-    private Map<String, ObserverContext> activeObserverContexts;
 
     public OpenTracerBallerinaWrapper() {
         enabled = ConfigRegistry.getInstance().getAsBoolean(CONFIG_TRACING_ENABLED);
         tracerStore = TracersStore.getInstance();
-        activeObserverContexts = new HashMap();
     }
 
     public static OpenTracerBallerinaWrapper getInstance() {
@@ -78,6 +78,7 @@ public class OpenTracerBallerinaWrapper {
         observerContext.setServiceName(serviceName);
         observerContext.setConnectorName(serviceName);
         observerContext.setActionName(spanName);
+        tags.forEach((observerContext::addTag));
 
         Optional<ObserverContext> optionalParentContext = ObservabilityUtils.getParentContext(context);
         optionalParentContext.ifPresent(parentContext -> {
@@ -87,12 +88,21 @@ public class OpenTracerBallerinaWrapper {
                 observerContext.addProperty(KEY_SPAN, new BSpan(observerContext, true));
             }
         });
-
         TracingUtils.startObservation(observerContext, true);
-        ObservabilityUtils.setObserverContextToWorkerExecutionContext(
-                context.getParentWorkerExecutionContext(), observerContext);
+
+        WorkerExecutionContext parentWorkerExecutionContext = context.getParentWorkerExecutionContext();
+        ObservabilityUtils.setObserverContextToWorkerExecutionContext(parentWorkerExecutionContext, observerContext);
         String spanId = UUID.randomUUID().toString();
-        activeObserverContexts.put(spanId, observerContext);
+
+        Map<String, ObserverContext> activeObserverContexts =
+                (Map<String, ObserverContext>) parentWorkerExecutionContext.localProps.get(KEY_USER_SPAN);
+        if (activeObserverContexts != null) {
+            activeObserverContexts.put(spanId, observerContext);
+        } else {
+            activeObserverContexts = new ConcurrentHashMap<>();
+            activeObserverContexts.put(spanId, observerContext);
+            parentWorkerExecutionContext.localProps.put(KEY_USER_SPAN, activeObserverContexts);
+        }
         return spanId;
     }
 
@@ -104,6 +114,8 @@ public class OpenTracerBallerinaWrapper {
      */
     public void finishSpan(String spanId, Context context) {
         if (enabled) {
+            Map<String, ObserverContext> activeObserverContexts = (Map<String, ObserverContext>) context
+                    .getParentWorkerExecutionContext().localProps.get(KEY_USER_SPAN);
             ObserverContext observerContext = activeObserverContexts.remove(spanId);
             TracingUtils.stopObservation(observerContext);
             ObservabilityUtils.setObserverContextToWorkerExecutionContext(
@@ -118,8 +130,10 @@ public class OpenTracerBallerinaWrapper {
      * @param tagKey   the key of the tag
      * @param tagValue the value of the tag
      */
-    public void addTags(String spanId, String tagKey, String tagValue) {
+    public void addTags(String spanId, String tagKey, String tagValue, Context context) {
         if (enabled) {
+            Map<String, ObserverContext> activeObserverContexts = (Map<String, ObserverContext>) context
+                    .getParentWorkerExecutionContext().localProps.get(KEY_USER_SPAN);
             activeObserverContexts.get(spanId).addTag(tagKey, tagValue);
         }
     }

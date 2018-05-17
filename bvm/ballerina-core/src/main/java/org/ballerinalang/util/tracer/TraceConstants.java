@@ -51,8 +51,6 @@ public class TraceConstants {
     public static final String LOG_ERROR_KIND_EXCEPTION = "Exception";
     public static final String LOG_EVENT_TYPE_ERROR = "error";
 
-    public static final String DEFAULT_USER_API_GROUP = "default-group";
-
     public static final String JAEGER = "jaeger";
     public static final String TRACER_NAME_CONFIG = CONFIG_TABLE_TRACING + ".name";
 
