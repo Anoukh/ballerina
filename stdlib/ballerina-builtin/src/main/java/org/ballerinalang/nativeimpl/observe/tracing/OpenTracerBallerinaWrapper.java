@@ -20,7 +20,6 @@ package org.ballerinalang.nativeimpl.observe.tracing;
 
 import io.opentracing.Tracer;
 import org.ballerinalang.bre.Context;
-import org.ballerinalang.bre.bvm.WorkerExecutionContext;
 import org.ballerinalang.config.ConfigRegistry;
 import org.ballerinalang.util.observability.ObservabilityUtils;
 import org.ballerinalang.util.observability.ObserverContext;
@@ -30,12 +29,9 @@ import org.ballerinalang.util.tracer.TracersStore;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static org.ballerinalang.util.observability.ObservabilityConstants.CONFIG_TRACING_ENABLED;
 import static org.ballerinalang.util.tracer.TraceConstants.KEY_SPAN;
-import static org.ballerinalang.util.tracer.TraceConstants.KEY_USER_SPAN;
 
 /**
  * This class wraps opentracing apis and exposes native functions to use within ballerina.
@@ -64,7 +60,7 @@ public class OpenTracerBallerinaWrapper {
      * @param context     native context
      * @return unique id of the created span
      */
-    public String startSpan(String serviceName, String spanName, Map<String, String> tags, Context context) {
+    public ObserverContext startSpan(String serviceName, String spanName, Map<String, String> tags, Context context) {
 
         if (!enabled) {
             return null;
@@ -90,51 +86,31 @@ public class OpenTracerBallerinaWrapper {
         });
         TracingUtils.startObservation(observerContext, true);
 
-        WorkerExecutionContext parentWorkerExecutionContext = context.getParentWorkerExecutionContext();
-        ObservabilityUtils.setObserverContextToWorkerExecutionContext(parentWorkerExecutionContext, observerContext);
-        String spanId = UUID.randomUUID().toString();
-
-        Map<String, ObserverContext> activeObserverContexts =
-                (Map<String, ObserverContext>) parentWorkerExecutionContext.localProps.get(KEY_USER_SPAN);
-        if (activeObserverContexts != null) {
-            activeObserverContexts.put(spanId, observerContext);
-        } else {
-            activeObserverContexts = new ConcurrentHashMap<>();
-            activeObserverContexts.put(spanId, observerContext);
-            parentWorkerExecutionContext.localProps.put(KEY_USER_SPAN, activeObserverContexts);
-        }
-        return spanId;
+        ObservabilityUtils.
+                setObserverContextToWorkerExecutionContext(context.getParentWorkerExecutionContext(), observerContext);
+        return observerContext;
     }
 
     /**
      * Method to mark a span as finished.
      *
-     * @param spanId  the id of the span to finish
-     * @param context native context
+     * @param observerContext observer context
      */
-    public void finishSpan(String spanId, Context context) {
+    public void finishSpan(ObserverContext observerContext) {
         if (enabled) {
-            Map<String, ObserverContext> activeObserverContexts = (Map<String, ObserverContext>) context
-                    .getParentWorkerExecutionContext().localProps.get(KEY_USER_SPAN);
-            ObserverContext observerContext = activeObserverContexts.remove(spanId);
             TracingUtils.stopObservation(observerContext);
-            ObservabilityUtils.setObserverContextToWorkerExecutionContext(
-                    context.getParentWorkerExecutionContext(), observerContext.getParent());
         }
     }
 
     /**
      * Method to add tags to an existing span.
      *
-     * @param spanId   the id of the span
      * @param tagKey   the key of the tag
      * @param tagValue the value of the tag
      */
-    public void addTags(String spanId, String tagKey, String tagValue, Context context) {
+    public void addTags(String tagKey, String tagValue, ObserverContext observerContext) {
         if (enabled) {
-            Map<String, ObserverContext> activeObserverContexts = (Map<String, ObserverContext>) context
-                    .getParentWorkerExecutionContext().localProps.get(KEY_USER_SPAN);
-            activeObserverContexts.get(spanId).addTag(tagKey, tagValue);
+            observerContext.addTag(tagKey, tagValue);
         }
     }
 }

@@ -25,6 +25,7 @@ import org.ballerinalang.model.values.BMap;
 import org.ballerinalang.natives.annotations.Argument;
 import org.ballerinalang.natives.annotations.BallerinaFunction;
 import org.ballerinalang.natives.annotations.ReturnType;
+import org.ballerinalang.util.observability.ObserverContext;
 
 /**
  * This function which implements the startSpan method for tracing.
@@ -49,9 +50,8 @@ public class StartSpan extends BlockingNativeCallableUnit {
         String serviceName = context.getStringArgument(0);
         String spanName = context.getStringArgument(1);
         BMap tags = (BMap) context.getNullableRefArgument(0);
-        String spanId = OpenTracerBallerinaWrapper.getInstance()
+        ObserverContext observerContext = OpenTracerBallerinaWrapper.getInstance()
                 .startSpan(serviceName, spanName, Utils.toStringMap(tags), context);
-
-        context.setReturnValues(Utils.createSpanStruct(context, spanId));
+        context.setReturnValues(Utils.createSpanStruct(context, observerContext));
     }
 }

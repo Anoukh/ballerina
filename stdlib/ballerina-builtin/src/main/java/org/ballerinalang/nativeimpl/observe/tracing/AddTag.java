@@ -26,6 +26,9 @@ import org.ballerinalang.natives.annotations.Argument;
 import org.ballerinalang.natives.annotations.BallerinaFunction;
 import org.ballerinalang.natives.annotations.Receiver;
 import org.ballerinalang.natives.annotations.ReturnType;
+import org.ballerinalang.util.observability.ObserverContext;
+
+import static org.ballerinalang.util.tracer.TraceConstants.NATIVE_SPAN_DATA;
 
 /**
  * This function adds tags to a span.
@@ -46,7 +49,6 @@ public class AddTag extends BlockingNativeCallableUnit {
     @Override
     public void execute(Context context) {
         BStruct span = (BStruct) context.getRefArgument(0);
-        String spanId = span.getStringField(0);
         String tagKey = context.getStringArgument(0);
         String tagValue = context.getStringArgument(1);
         boolean isFinished = span.getBooleanField(0) == 1;
@@ -55,7 +57,8 @@ public class AddTag extends BlockingNativeCallableUnit {
             context.setReturnValues(Utils.createErrorStruct(context,
                     "Span already finished. Can not add tag {" + tagKey + ":" + tagValue + "}"));
         } else {
-            OpenTracerBallerinaWrapper.getInstance().addTags(spanId, tagKey, tagValue, context);
+            OpenTracerBallerinaWrapper.getInstance()
+                    .addTags(tagKey, tagValue, (ObserverContext) span.getNativeData(NATIVE_SPAN_DATA));
         }
     }
 }

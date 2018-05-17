@@ -24,6 +24,9 @@ import org.ballerinalang.model.types.TypeKind;
 import org.ballerinalang.model.values.BStruct;
 import org.ballerinalang.natives.annotations.BallerinaFunction;
 import org.ballerinalang.natives.annotations.Receiver;
+import org.ballerinalang.util.observability.ObserverContext;
+
+import static org.ballerinalang.util.tracer.TraceConstants.NATIVE_SPAN_DATA;
 
 /**
  * This function which implements the finishSpan method for tracing.
@@ -40,8 +43,14 @@ public class FinishSpan extends BlockingNativeCallableUnit {
     @Override
     public void execute(Context context) {
         BStruct span = (BStruct) context.getRefArgument(0);
-        String spanId = span.getStringField(0);
-        span.setBooleanField(0, 1);
-        OpenTracerBallerinaWrapper.getInstance().finishSpan(spanId, context);
+        boolean isFinished = span.getBooleanField(0) == 1;
+
+        if (isFinished) {
+            context.setReturnValues(Utils.createErrorStruct(context, "Can not finish already finished span"));
+        } else {
+            span.setBooleanField(0, 1);
+            ObserverContext observeContext = (ObserverContext) span.getNativeData(NATIVE_SPAN_DATA);
+            OpenTracerBallerinaWrapper.getInstance().finishSpan(observeContext);
+        }
     }
 }
