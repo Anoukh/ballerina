@@ -35,7 +35,7 @@ public class TraceConstants {
     public static final String TRACE_HEADER = "x-b7a-trace";
     public static final String USER_TRACE_HEADER = "x-b7a-utrace-";
     public static final String KEY_SPAN = "_span_";
-    public static final String KEY_USER_SPAN = "_u_span_";
+    public static final String NATIVE_SPAN_DATA = "_n_span_";
 
     public static final String TAG_KEY_SPAN_KIND = "span.kind";
 
