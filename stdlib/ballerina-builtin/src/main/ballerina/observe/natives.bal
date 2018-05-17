@@ -52,13 +52,10 @@ public native function getCounterInstance(string name, map<string>? tags = (), s
 
 documentation {
     Represents a span
-    F{{spanId}} unique Id to identify a span
-    F{{isFinished}} mark a span as finished
 }
 public type Span object {
 
     private {
-        string spanId,
         boolean isFinished,
     }
 
@@ -74,9 +71,8 @@ public type Span object {
     documentation {
         Finish the current span.
 
-        R{{}} An error if an error occured while attaching tag to the span
     }
-    public native function finish();
+    public native function finish() returns error?;
 
 };
 
@@ -86,9 +82,9 @@ documentation {
     P{{serviceName}} Name of the service the span should belong to
     P{{spanName}} Name of the span
     P{{tags}} tags to be associated to the span
-    R{{}} An instance of the started span
+    R{{Span}} An instance of the started span
 }
-public native function startSpan(string serviceName, string spanName, map? tags = ()) returns Span {}
+public native function startSpan(string serviceName, string spanName, map? tags = ()) returns Span;
 
 // Native implementation to avoid reading configuration file
 //public native function isTraceEnabled() returns boolean {}

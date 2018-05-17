@@ -27,10 +27,8 @@ import org.ballerinalang.util.observability.TracingUtils;
 import org.ballerinalang.util.tracer.BSpan;
 import org.ballerinalang.util.tracer.TracersStore;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.ballerinalang.util.observability.ObservabilityConstants.CONFIG_TRACING_ENABLED;
 import static org.ballerinalang.util.tracer.TraceConstants.KEY_SPAN;
@@ -43,12 +41,10 @@ public class OpenTracerBallerinaWrapper {
     private static OpenTracerBallerinaWrapper instance = new OpenTracerBallerinaWrapper();
     private TracersStore tracerStore;
     private final boolean enabled;
-    private Map<String, ObserverContext> activeObserverContexts;
 
     public OpenTracerBallerinaWrapper() {
         enabled = ConfigRegistry.getInstance().getAsBoolean(CONFIG_TRACING_ENABLED);
         tracerStore = TracersStore.getInstance();
-        activeObserverContexts = new HashMap();
     }
 
     public static OpenTracerBallerinaWrapper getInstance() {
@@ -64,7 +60,7 @@ public class OpenTracerBallerinaWrapper {
      * @param context     native context
      * @return unique id of the created span
      */
-    public String startSpan(String serviceName, String spanName, Map<String, String> tags, Context context) {
+    public ObserverContext startSpan(String serviceName, String spanName, Map<String, String> tags, Context context) {
 
         if (!enabled) {
             return null;
@@ -78,6 +74,7 @@ public class OpenTracerBallerinaWrapper {
         observerContext.setServiceName(serviceName);
         observerContext.setConnectorName(serviceName);
         observerContext.setActionName(spanName);
+        tags.forEach((observerContext::addTag));
 
         Optional<ObserverContext> optionalParentContext = ObservabilityUtils.getParentContext(context);
         optionalParentContext.ifPresent(parentContext -> {
@@ -87,40 +84,33 @@ public class OpenTracerBallerinaWrapper {
                 observerContext.addProperty(KEY_SPAN, new BSpan(observerContext, true));
             }
         });
-
         TracingUtils.startObservation(observerContext, true);
-        ObservabilityUtils.setObserverContextToWorkerExecutionContext(
-                context.getParentWorkerExecutionContext(), observerContext);
-        String spanId = UUID.randomUUID().toString();
-        activeObserverContexts.put(spanId, observerContext);
-        return spanId;
+
+        ObservabilityUtils.
+                setObserverContextToWorkerExecutionContext(context.getParentWorkerExecutionContext(), observerContext);
+        return observerContext;
     }
 
     /**
      * Method to mark a span as finished.
      *
-     * @param spanId  the id of the span to finish
-     * @param context native context
+     * @param observerContext observer context
      */
-    public void finishSpan(String spanId, Context context) {
+    public void finishSpan(ObserverContext observerContext) {
         if (enabled) {
-            ObserverContext observerContext = activeObserverContexts.remove(spanId);
             TracingUtils.stopObservation(observerContext);
-            ObservabilityUtils.setObserverContextToWorkerExecutionContext(
-                    context.getParentWorkerExecutionContext(), observerContext.getParent());
         }
     }
 
     /**
      * Method to add tags to an existing span.
      *
-     * @param spanId   the id of the span
      * @param tagKey   the key of the tag
      * @param tagValue the value of the tag
      */
-    public void addTags(String spanId, String tagKey, String tagValue) {
+    public void addTags(String tagKey, String tagValue, ObserverContext observerContext) {
         if (enabled) {
-            activeObserverContexts.get(spanId).addTag(tagKey, tagValue);
+            observerContext.addTag(tagKey, tagValue);
         }
     }
 }

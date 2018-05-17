@@ -35,7 +35,7 @@ public class TraceConstants {
     public static final String TRACE_HEADER = "x-b7a-trace";
     public static final String USER_TRACE_HEADER = "x-b7a-utrace-";
     public static final String KEY_SPAN = "_span_";
-    public static final String KEY_USER_SPAN = "_u_span_";
+    public static final String NATIVE_SPAN_DATA = "_n_span_";
 
     public static final String TAG_KEY_SPAN_KIND = "span.kind";
 
@@ -50,8 +50,6 @@ public class TraceConstants {
     public static final String LOG_KEY_EVENT_TYPE = "event";
     public static final String LOG_ERROR_KIND_EXCEPTION = "Exception";
     public static final String LOG_EVENT_TYPE_ERROR = "error";
-
-    public static final String DEFAULT_USER_API_GROUP = "default-group";
 
     public static final String JAEGER = "jaeger";
     public static final String TRACER_NAME_CONFIG = CONFIG_TABLE_TRACING + ".name";
