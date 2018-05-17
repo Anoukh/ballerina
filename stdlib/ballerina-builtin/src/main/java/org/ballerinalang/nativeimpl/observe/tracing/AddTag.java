@@ -55,7 +55,7 @@ public class AddTag extends BlockingNativeCallableUnit {
             context.setReturnValues(Utils.createErrorStruct(context,
                     "Span already finished. Can not add tag {" + tagKey + ":" + tagValue + "}"));
         } else {
-            OpenTracerBallerinaWrapper.getInstance().addTags(spanId, tagKey, tagValue);
+            OpenTracerBallerinaWrapper.getInstance().addTags(spanId, tagKey, tagValue, context);
         }
     }
 }

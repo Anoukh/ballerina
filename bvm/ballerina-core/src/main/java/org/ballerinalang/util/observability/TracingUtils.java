@@ -49,7 +49,7 @@ public class TracingUtils {
     /**
      * Starts a span of an  {@link ObserverContext}.
      *
-     * @param observerContext context that would hold the started span.\
+     * @param observerContext context that would hold the started span
      * @param isClient        true if the starting span is a client
      */
     public static void startObservation(ObserverContext observerContext, boolean isClient) {
