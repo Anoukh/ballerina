@@ -21,6 +21,7 @@ import org.ballerinalang.bre.Context;
 import org.ballerinalang.bre.bvm.WorkerExecutionContext;
 import org.ballerinalang.config.ConfigRegistry;
 import org.ballerinalang.util.codegen.ServiceInfo;
+import org.ballerinalang.util.program.BLangVMUtils;
 import org.ballerinalang.util.tracer.BSpan;
 
 import java.util.ArrayList;
@@ -36,7 +37,6 @@ import static org.ballerinalang.util.observability.ObservabilityConstants.CONFIG
 import static org.ballerinalang.util.observability.ObservabilityConstants.CONFIG_TRACING_ENABLED;
 import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_OBSERVER_CONTEXT;
 import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_USER_TRACE_CONTEXT;
-import static org.ballerinalang.util.observability.ObservabilityConstants.SERVICE_INFO;
 import static org.ballerinalang.util.observability.ObservabilityConstants.UNKNOWN_SERVICE;
 import static org.ballerinalang.util.tracer.TraceConstants.KEY_SPAN;
 
@@ -131,7 +131,7 @@ public class ObservabilityUtils {
         ctx.setConnectorName(connectorName);
         ctx.setActionName(actionName);
         if (parentCtx != null) {
-            ServiceInfo serviceInfo = (ServiceInfo) parentCtx.globalProps.get(SERVICE_INFO);
+            ServiceInfo serviceInfo = BLangVMUtils.getServiceInfo(parentCtx);
             if (serviceInfo != null) {
                 ctx.setServiceName(serviceInfo.getType().toString());
             } else {

@@ -57,7 +57,6 @@ public type Span object {
 
     private {
         boolean isFinished,
-        boolean isUserTrace,
     }
 
     documentation {
