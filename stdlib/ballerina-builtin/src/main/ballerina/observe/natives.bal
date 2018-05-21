@@ -57,6 +57,7 @@ public type Span object {
 
     private {
         boolean isFinished,
+        boolean isUserTrace,
     }
 
     documentation {
@@ -84,7 +85,8 @@ documentation {
     P{{tags}} tags to be associated to the span
     R{{Span}} An instance of the started span
 }
-public native function startSpan(string serviceName, string spanName, map? tags = ()) returns Span;
+public native function startSpan(string serviceName, string spanName, map? tags = (), boolean userTrace = false)
+                           returns Span;
 
 // Native implementation to avoid reading configuration file
 //public native function isTraceEnabled() returns boolean {}

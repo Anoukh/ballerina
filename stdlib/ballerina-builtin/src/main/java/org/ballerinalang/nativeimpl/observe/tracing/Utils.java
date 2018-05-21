@@ -54,10 +54,10 @@ public class Utils {
         return returnMap;
     }
 
-    public static BStruct createSpanStruct(Context context, ObserverContext observerContext) {
+    public static BStruct createSpanStruct(Context context, ObserverContext observerContext, boolean isUserTrace) {
         PackageInfo observePackage = context.getProgramFile().getPackageInfo("ballerina.observe");
         StructInfo spanStructInfo = observePackage.getStructInfo("Span");
-        BStruct spanStruct = BLangVMStructs.createBStruct(spanStructInfo, false);
+        BStruct spanStruct = BLangVMStructs.createBStruct(spanStructInfo, false, isUserTrace);
         spanStruct.addNativeData(NATIVE_SPAN_DATA, observerContext);
         return spanStruct;
     }

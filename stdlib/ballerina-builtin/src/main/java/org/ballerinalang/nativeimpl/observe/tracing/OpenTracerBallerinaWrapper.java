@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.ballerinalang.util.observability.ObservabilityConstants.CONFIG_TRACING_ENABLED;
+import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_OBSERVER_CONTEXT;
 import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_USER_TRACE_CONTEXT;
 import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_TRACE_PROPERTIES;
 import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_USER_TRACE_PROPERTIES;
@@ -61,12 +62,12 @@ public class OpenTracerBallerinaWrapper {
      * @param serviceName name of the service the span should belong to
      * @param spanName    name of the span
      * @param tags        key value paired tags to attach to the span
-     * @param userTrace
+     * @param isUserTrace if the span is related to a user trace or ootb trace
      * @param context     native context
      * @return unique id of the created span
      */
     public ObserverContext startSpan(String serviceName, String spanName, Map<String, String> tags,
-                                     boolean userTrace, Context context) {
+                                     boolean isUserTrace, Context context) {
 
         if (!enabled) {
             return null;
@@ -81,7 +82,26 @@ public class OpenTracerBallerinaWrapper {
         observerContext.setResourceName(spanName);
         tags.forEach((observerContext::addTag));
 
-        if (!userTrace) {
+        if (isUserTrace) {
+
+            observerContext.setUserTrace();
+            Optional<ObserverContext> optionalParentContext = ObservabilityUtils.getParentContext(context);
+            optionalParentContext.ifPresent(parentContext -> observerContext.addProperty(
+                    PROPERTY_USER_TRACE_PROPERTIES, parentContext.getGlobalProps().get(PROPERTY_TRACE_PROPERTIES)
+            ));
+            Map<String, Object> localProps = context.getParentWorkerExecutionContext().localProps;
+            if (localProps == null) {
+                localProps = new HashMap<>();
+                context.getParentWorkerExecutionContext().localProps = localProps;
+            }
+            ObserverContext userTraceContext = (ObserverContext) localProps.get(KEY_USER_TRACE_CONTEXT);
+            if (userTraceContext != null) {
+                observerContext.setParent(userTraceContext);
+            }
+            context.getParentWorkerExecutionContext().localProps.put(KEY_USER_TRACE_CONTEXT, observerContext);
+
+        } else {
+
             Optional<ObserverContext> optionalParentContext = ObservabilityUtils.getParentContext(context);
             optionalParentContext.ifPresent(parentContext -> {
                 BSpan bSpan = (BSpan) parentContext.getProperty(KEY_SPAN);
@@ -93,21 +113,6 @@ public class OpenTracerBallerinaWrapper {
 
             ObservabilityUtils.setObserverContextToWorkerExecutionContext(
                     context.getParentWorkerExecutionContext(), observerContext);
-        } else {
-            observerContext.setUserTrace();
-            Optional<ObserverContext> optionalParentContext = ObservabilityUtils.getParentContext(context);
-            optionalParentContext.ifPresent(parentContext -> observerContext.addProperty(
-                    PROPERTY_USER_TRACE_PROPERTIES, parentContext.getGlobalProps().get(PROPERTY_TRACE_PROPERTIES)));
-            Map<String, Object> localProps = context.getParentWorkerExecutionContext().localProps;
-            if (localProps == null) {
-                localProps = new HashMap<>();
-                context.getParentWorkerExecutionContext().localProps = localProps;
-            }
-            ObserverContext userTraceContext = (ObserverContext) localProps.get(KEY_USER_TRACE_CONTEXT);
-            if (userTraceContext != null) {
-                observerContext.setParent(userTraceContext);
-            }
-            context.getParentWorkerExecutionContext().localProps.put(KEY_USER_TRACE_CONTEXT, observerContext);
         }
 
         TracingUtils.startObservation(observerContext, false);
@@ -118,18 +123,28 @@ public class OpenTracerBallerinaWrapper {
      * Method to mark a span as finished.
      *
      * @param observerContext observer context
+     * @param isUserTrace     if the span is related to a user trace or ootb trace
+     * @param context         native context
      */
-    public void finishSpan(ObserverContext observerContext) {
+    public void finishSpan(ObserverContext observerContext, boolean isUserTrace, Context context) {
         if (enabled) {
             TracingUtils.stopObservation(observerContext);
+            if (isUserTrace) {
+                context.getParentWorkerExecutionContext()
+                        .localProps.put(KEY_USER_TRACE_CONTEXT, observerContext.getParent());
+            } else {
+                context.getParentWorkerExecutionContext()
+                        .localProps.put(KEY_OBSERVER_CONTEXT, observerContext.getParent());
+            }
         }
     }
 
     /**
      * Method to add tags to an existing span.
      *
-     * @param tagKey   the key of the tag
-     * @param tagValue the value of the tag
+     * @param tagKey          the key of the tag
+     * @param tagValue        the value of the tag
+     * @param observerContext observer context
      */
     public void addTags(String tagKey, String tagValue, ObserverContext observerContext) {
         if (enabled) {

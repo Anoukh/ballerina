@@ -45,7 +45,7 @@ public class GetFinishedSpansCount extends BlockingNativeCallableUnit {
     public void execute(Context context) {
         List<MockTracer> mockTracer = BMockTracer.getTracerMap();
         final int[] count = {0};
-        mockTracer.forEach((tracer) -> count[0] += tracer.finishedSpans().size());
+        mockTracer.forEach(tracer -> count[0] += tracer.finishedSpans().size());
         context.setReturnValues(new BInteger(count[0]));
     }
 }
