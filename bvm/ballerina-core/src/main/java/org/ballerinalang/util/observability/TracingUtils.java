@@ -22,7 +22,6 @@ package org.ballerinalang.util.observability;
 import org.ballerinalang.bre.bvm.BLangVMErrors;
 import org.ballerinalang.model.values.BStruct;
 import org.ballerinalang.util.tracer.BSpan;
-import org.ballerinalang.util.tracer.TraceConstants;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,12 +30,15 @@ import static org.ballerinalang.util.observability.ObservabilityConstants.PROPER
 import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_ERROR;
 import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_ERROR_MESSAGE;
 import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_TRACE_PROPERTIES;
+import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_USER_TRACE_PROPERTIES;
 import static org.ballerinalang.util.tracer.TraceConstants.KEY_SPAN;
 import static org.ballerinalang.util.tracer.TraceConstants.LOG_ERROR_KIND_EXCEPTION;
 import static org.ballerinalang.util.tracer.TraceConstants.LOG_EVENT_TYPE_ERROR;
 import static org.ballerinalang.util.tracer.TraceConstants.LOG_KEY_ERROR_KIND;
 import static org.ballerinalang.util.tracer.TraceConstants.LOG_KEY_EVENT_TYPE;
 import static org.ballerinalang.util.tracer.TraceConstants.LOG_KEY_MESSAGE;
+import static org.ballerinalang.util.tracer.TraceConstants.TRACE_HEADER;
+import static org.ballerinalang.util.tracer.TraceConstants.USER_TRACE_HEADER;
 
 /**
  * Util class to hold tracing specific util methods.
@@ -66,12 +68,19 @@ public class TracingUtils {
             observerContext.addProperty(PROPERTY_TRACE_PROPERTIES, span.getProperties());
         } else {
             span.setActionName(observerContext.getResourceName());
-            Map<String, String> httpHeaders =
-                    (Map<String, String>) observerContext.getProperty(PROPERTY_TRACE_PROPERTIES);
+            String headerName;
+            Map<String, String> httpHeaders;
+            if (!observerContext.isUserTrace()) {
+                headerName = TRACE_HEADER;
+                httpHeaders = (Map<String, String>) observerContext.getProperty(PROPERTY_TRACE_PROPERTIES);
+            } else {
+                headerName = USER_TRACE_HEADER;
+                httpHeaders = (Map<String, String>) observerContext.getProperty(PROPERTY_USER_TRACE_PROPERTIES);
+            }
             if (httpHeaders != null) {
                 httpHeaders.entrySet().stream()
-                        .filter(c -> TraceConstants.TRACE_HEADER.equals(c.getKey()))
-                        .forEach(e -> span.addProperty(e.getKey(), e.getValue()));
+                        .filter(c -> headerName.equals(c.getKey()))
+                        .forEach(e -> span.addProperty("_trace_context_", e.getValue()));
             }
         }
 

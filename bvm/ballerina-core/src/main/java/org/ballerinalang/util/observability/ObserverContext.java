@@ -51,9 +51,14 @@ public class ObserverContext {
 
     private ObserverContext parent;
 
+    private boolean userTrace;
+
+    private Map<String, Object> globalProps;
+
     public ObserverContext() {
         this.properties = new HashMap<>();
         this.tags = new HashMap<>();
+        this.globalProps = new HashMap<>();
     }
 
     public void addProperty(String key, Object value) {
@@ -126,6 +131,19 @@ public class ObserverContext {
 
     public void setParent(ObserverContext parent) {
         this.parent = parent;
+        parent.globalProps.putAll(this.globalProps);
+        this.globalProps = parent.globalProps;
     }
 
+    public void setUserTrace() {
+        this.userTrace = true;
+    }
+
+    public boolean isUserTrace() {
+        return userTrace;
+    }
+
+    public Map<String, Object> getGlobalProps() {
+        return this.globalProps;
+    }
 }

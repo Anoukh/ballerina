@@ -32,6 +32,9 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.ballerinalang.util.observability.ObservabilityConstants.CONFIG_TRACING_ENABLED;
+import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_USER_TRACE_CONTEXT;
+import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_TRACE_PROPERTIES;
+import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_USER_TRACE_PROPERTIES;
 import static org.ballerinalang.util.tracer.TraceConstants.KEY_SPAN;
 
 /**
@@ -39,7 +42,6 @@ import static org.ballerinalang.util.tracer.TraceConstants.KEY_SPAN;
  */
 public class OpenTracerBallerinaWrapper {
 
-    public static final String USER_TRACE_CONTEXT = "_user_trace_context";
     private static OpenTracerBallerinaWrapper instance = new OpenTracerBallerinaWrapper();
     private TracersStore tracerStore;
     private final boolean enabled;
@@ -76,7 +78,7 @@ public class OpenTracerBallerinaWrapper {
 
         ObserverContext observerContext = new ObserverContext();
         observerContext.setServiceName(serviceName);
-        observerContext.setActionName(spanName);
+        observerContext.setResourceName(spanName);
         tags.forEach((observerContext::addTag));
 
         if (!userTrace) {
@@ -85,26 +87,30 @@ public class OpenTracerBallerinaWrapper {
                 BSpan bSpan = (BSpan) parentContext.getProperty(KEY_SPAN);
                 if (bSpan != null) {
                     observerContext.setParent(parentContext);
-                    observerContext.addProperty(KEY_SPAN, new BSpan(observerContext, true));
+                    observerContext.addProperty(KEY_SPAN, new BSpan(observerContext, false));
                 }
             });
 
             ObservabilityUtils.setObserverContextToWorkerExecutionContext(
                     context.getParentWorkerExecutionContext(), observerContext);
         } else {
+            observerContext.setUserTrace();
+            Optional<ObserverContext> optionalParentContext = ObservabilityUtils.getParentContext(context);
+            optionalParentContext.ifPresent(parentContext -> observerContext.addProperty(
+                    PROPERTY_USER_TRACE_PROPERTIES, parentContext.getGlobalProps().get(PROPERTY_TRACE_PROPERTIES)));
             Map<String, Object> localProps = context.getParentWorkerExecutionContext().localProps;
             if (localProps == null) {
                 localProps = new HashMap<>();
                 context.getParentWorkerExecutionContext().localProps = localProps;
             }
-            ObserverContext userTraceContext = (ObserverContext) localProps.get(USER_TRACE_CONTEXT);
+            ObserverContext userTraceContext = (ObserverContext) localProps.get(KEY_USER_TRACE_CONTEXT);
             if (userTraceContext != null) {
                 observerContext.setParent(userTraceContext);
             }
-            context.getParentWorkerExecutionContext().localProps.put(USER_TRACE_CONTEXT, observerContext);
+            context.getParentWorkerExecutionContext().localProps.put(KEY_USER_TRACE_CONTEXT, observerContext);
         }
 
-        TracingUtils.startObservation(observerContext, true);
+        TracingUtils.startObservation(observerContext, false);
         return observerContext;
     }
 

@@ -35,6 +35,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static org.ballerinalang.util.observability.ObservabilityConstants.CONFIG_METRICS_ENABLED;
 import static org.ballerinalang.util.observability.ObservabilityConstants.CONFIG_TRACING_ENABLED;
 import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_OBSERVER_CONTEXT;
+import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_USER_TRACE_CONTEXT;
 import static org.ballerinalang.util.tracer.TraceConstants.KEY_SPAN;
 
 /**
@@ -206,10 +207,22 @@ public class ObservabilityUtils {
                 : Optional.empty();
     }
 
-    public static Map<String, String> getContextProperties(ObserverContext observerContext) {
+    /**
+     *
+     * @param context The {@link Context} instance.
+     * @return the parent {@link ObserverContext} that includes a user trace or a new {@link ObserverContext}
+     */
+    public static Optional<ObserverContext> getUserTraceParentContext(Context context) {
+        return enabled ?
+                Optional.of(
+                        getUserTraceParentObserverContext(context.getParentWorkerExecutionContext()))
+                : Optional.empty();
+    }
+
+    public static Map<String, String> getContextProperties(ObserverContext observerContext, String headerName) {
         BSpan bSpan = (BSpan) observerContext.getProperty(KEY_SPAN);
         if (bSpan != null) {
-            return bSpan.getTraceContext();
+            return bSpan.getTraceContext(headerName);
         }
         return Collections.emptyMap();
     }
@@ -246,5 +259,17 @@ public class ObservabilityUtils {
             w.localProps.put(KEY_OBSERVER_CONTEXT, observerContext);
         });
         return observerContext;
+    }
+
+    private static ObserverContext getUserTraceParentObserverContext(WorkerExecutionContext parentCtx) {
+        WorkerExecutionContext parent = parentCtx;
+        while (parent != null) {
+            Object ctx = (parent.localProps != null) ? parent.localProps.get(KEY_USER_TRACE_CONTEXT) : null;
+            if (ctx != null) {
+                return (ObserverContext) ctx;
+            }
+            parent = parent.parent;
+        }
+        return new ObserverContext();
     }
 }

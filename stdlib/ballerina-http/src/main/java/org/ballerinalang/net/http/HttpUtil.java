@@ -53,6 +53,7 @@ import org.ballerinalang.util.codegen.ProgramFile;
 import org.ballerinalang.util.exceptions.BallerinaException;
 import org.ballerinalang.util.observability.ObservabilityUtils;
 import org.ballerinalang.util.observability.ObserverContext;
+import org.ballerinalang.util.tracer.TraceConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.transport.http.netty.config.ChunkConfig;
@@ -113,6 +114,7 @@ import static org.ballerinalang.util.observability.ObservabilityConstants.TAG_KE
 import static org.ballerinalang.util.observability.ObservabilityConstants.TAG_KEY_HTTP_STATUS_CODE;
 import static org.ballerinalang.util.observability.ObservabilityConstants.TAG_KEY_HTTP_URL;
 import static org.ballerinalang.util.observability.ObservabilityConstants.TAG_KEY_PEER_ADDRESS;
+import static org.ballerinalang.util.tracer.TraceConstants.USER_TRACE_HEADER;
 import static org.wso2.transport.http.netty.common.Constants.ENCODING_GZIP;
 import static org.wso2.transport.http.netty.common.Constants.HTTP_TRANSFER_ENCODING_IDENTITY;
 
@@ -1134,7 +1136,7 @@ public class HttpUtil {
     public static void checkAndObserveHttpRequest(Context context, HTTPCarbonMessage message) {
         Optional<ObserverContext> observerContext = ObservabilityUtils.getParentContext(context);
         observerContext.ifPresent(ctx -> {
-            HttpUtil.injectHeaders(message, ObservabilityUtils.getContextProperties(ctx));
+            HttpUtil.injectHeaders(message, ObservabilityUtils.getContextProperties(ctx, TraceConstants.TRACE_HEADER));
             ctx.addTag(TAG_KEY_HTTP_METHOD, String.valueOf(message.getProperty(HttpConstants.HTTP_METHOD)));
             ctx.addTag(TAG_KEY_HTTP_URL, String.valueOf(message.getProperty(HttpConstants.TO)));
             ctx.addTag(TAG_KEY_PEER_ADDRESS,
@@ -1146,6 +1148,10 @@ public class HttpUtil {
             // HTTP Status code must be a number.
             ctx.addTag(TAG_KEY_HTTP_STATUS_CODE, Integer.toString(0));
         });
+
+        Optional<ObserverContext> userTraceParentContext = ObservabilityUtils.getUserTraceParentContext(context);
+        userTraceParentContext.ifPresent(ctx -> HttpUtil.injectHeaders(message,
+                ObservabilityUtils.getContextProperties(ctx, USER_TRACE_HEADER)));
     }
 
     public static void injectHeaders(HTTPCarbonMessage msg, Map<String, String> headers) {

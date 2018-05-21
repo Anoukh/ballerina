@@ -30,6 +30,7 @@ public class ObservabilityConstants {
     }
 
     public static final String KEY_OBSERVER_CONTEXT = "__observer_context__";
+    public static final String KEY_USER_TRACE_CONTEXT = "_user_trace_observer_context_";
 
     public static final String SERVER_CONNECTOR_HTTP = "http";
     public static final String SERVER_CONNECTOR_WEBSOCKET = "ws";
@@ -51,6 +52,7 @@ public class ObservabilityConstants {
     public static final String TAG_DB_TYPE_SQL = "sql";
 
     public static final String PROPERTY_TRACE_PROPERTIES = "trace_properties";
+    public static final String PROPERTY_USER_TRACE_PROPERTIES = "user_trace_properties";
     public static final String PROPERTY_ERROR = "error";
     public static final String PROPERTY_ERROR_MESSAGE = "error_message";
     public static final String PROPERTY_BSTRUCT_ERROR = "bstruct_error";
