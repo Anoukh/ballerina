@@ -20,7 +20,9 @@ package org.ballerinalang.nativeimpl.observe.tracing;
 
 import io.opentracing.Tracer;
 import org.ballerinalang.bre.Context;
+import org.ballerinalang.bre.bvm.WorkerExecutionContext;
 import org.ballerinalang.config.ConfigRegistry;
+import org.ballerinalang.util.codegen.ServiceInfo;
 import org.ballerinalang.util.observability.ObservabilityUtils;
 import org.ballerinalang.util.observability.ObserverContext;
 import org.ballerinalang.util.observability.TracingUtils;
@@ -36,6 +38,8 @@ import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_OB
 import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_USER_TRACE_CONTEXT;
 import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_TRACE_PROPERTIES;
 import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_USER_TRACE_PROPERTIES;
+import static org.ballerinalang.util.observability.ObservabilityConstants.SERVICE_INFO;
+import static org.ballerinalang.util.observability.ObservabilityConstants.UNKNOWN_SERVICE;
 import static org.ballerinalang.util.tracer.TraceConstants.KEY_SPAN;
 
 /**
@@ -59,19 +63,21 @@ public class OpenTracerBallerinaWrapper {
     /**
      * Method to start a span using parent span context.
      *
-     * @param serviceName name of the service the span should belong to
      * @param spanName    name of the span
      * @param tags        key value paired tags to attach to the span
      * @param isUserTrace if the span is related to a user trace or ootb trace
      * @param context     native context
      * @return unique id of the created span
      */
-    public ObserverContext startSpan(String serviceName, String spanName, Map<String, String> tags,
-                                     boolean isUserTrace, Context context) {
+    public ObserverContext startSpan(String spanName, Map<String, String> tags, boolean isUserTrace, Context context) {
 
         if (!enabled) {
             return null;
         }
+
+        WorkerExecutionContext parentCtx = context.getParentWorkerExecutionContext();
+        ServiceInfo serviceInfo = (ServiceInfo) parentCtx.globalProps.get(SERVICE_INFO);
+        String serviceName = serviceInfo != null ? serviceInfo.getType().toString() : UNKNOWN_SERVICE;
         Tracer tracer = tracerStore.getTracer(serviceName);
         if (tracer == null) {
             return null;
@@ -89,16 +95,16 @@ public class OpenTracerBallerinaWrapper {
             optionalParentContext.ifPresent(parentContext -> observerContext.addProperty(
                     PROPERTY_USER_TRACE_PROPERTIES, parentContext.getGlobalProps().get(PROPERTY_TRACE_PROPERTIES)
             ));
-            Map<String, Object> localProps = context.getParentWorkerExecutionContext().localProps;
+            Map<String, Object> localProps = parentCtx.localProps;
             if (localProps == null) {
                 localProps = new HashMap<>();
-                context.getParentWorkerExecutionContext().localProps = localProps;
+                parentCtx.localProps = localProps;
             }
             ObserverContext userTraceContext = (ObserverContext) localProps.get(KEY_USER_TRACE_CONTEXT);
             if (userTraceContext != null) {
                 observerContext.setParent(userTraceContext);
             }
-            context.getParentWorkerExecutionContext().localProps.put(KEY_USER_TRACE_CONTEXT, observerContext);
+            parentCtx.localProps.put(KEY_USER_TRACE_CONTEXT, observerContext);
 
         } else {
 
@@ -112,7 +118,7 @@ public class OpenTracerBallerinaWrapper {
             });
 
             ObservabilityUtils.setObserverContextToWorkerExecutionContext(
-                    context.getParentWorkerExecutionContext(), observerContext);
+                    parentCtx, observerContext);
         }
 
         TracingUtils.startObservation(observerContext, false);
