@@ -47,7 +47,7 @@ public class GetCounterInstance extends BlockingNativeCallableUnit {
     @Override
     public void execute(Context context) {
         String name = context.getStringArgument(0);
-        String description = context.getStringArgument(1);
+        String description = context.getNullableStringArgument(0);
         if (description == null) {
             // Make description optional
             description = "";
