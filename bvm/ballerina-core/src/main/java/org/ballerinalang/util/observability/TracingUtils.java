@@ -26,6 +26,7 @@ import org.ballerinalang.util.tracer.BSpan;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_TRACE_CONTEXT;
 import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_BSTRUCT_ERROR;
 import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_ERROR;
 import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_ERROR_MESSAGE;
@@ -80,7 +81,7 @@ public class TracingUtils {
             if (httpHeaders != null) {
                 httpHeaders.entrySet().stream()
                         .filter(c -> headerName.equals(c.getKey()))
-                        .forEach(e -> span.addProperty("_trace_context_", e.getValue()));
+                        .forEach(e -> span.addProperty(KEY_TRACE_CONTEXT, e.getValue()));
             }
         }
 

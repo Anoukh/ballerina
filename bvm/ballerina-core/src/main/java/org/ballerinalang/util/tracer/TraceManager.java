@@ -26,6 +26,8 @@ import io.opentracing.propagation.Format;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_TRACE_CONTEXT;
+
 /**
  * {@link TraceManager} loads {@link TraceManager} implementation
  * and wraps it's functionality.
@@ -53,7 +55,7 @@ public class TraceManager {
             if (parentBSpan != null) {
                 span = startSpan(resource, parentBSpan.getSpan(), activeBSpan.getTags(), service, false);
             } else {
-                span = startSpan(resource, extractSpanContext(activeBSpan.getProperty("_trace_context_"), service),
+                span = startSpan(resource, extractSpanContext(activeBSpan.getProperty(KEY_TRACE_CONTEXT), service),
                         activeBSpan.getTags(), service, true);
             }
 

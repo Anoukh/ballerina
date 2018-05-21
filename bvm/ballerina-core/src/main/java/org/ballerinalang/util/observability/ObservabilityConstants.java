@@ -29,6 +29,7 @@ public class ObservabilityConstants {
     private ObservabilityConstants() {
     }
 
+    public static final String KEY_TRACE_CONTEXT = "_trace_context_";
     public static final String KEY_OBSERVER_CONTEXT = "__observer_context__";
     public static final String KEY_USER_TRACE_CONTEXT = "_user_trace_observer_context_";
 
