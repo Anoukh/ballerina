@@ -32,11 +32,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.ballerinalang.util.observability.ObservabilityConstants.CONFIG_METRICS_ENABLED;
 import static org.ballerinalang.util.observability.ObservabilityConstants.CONFIG_TRACING_ENABLED;
 import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_OBSERVER_CONTEXT;
 import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_USER_TRACE_CONTEXT;
+import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_TRACE_PROPERTIES;
 import static org.ballerinalang.util.observability.ObservabilityConstants.UNKNOWN_SERVICE;
 import static org.ballerinalang.util.tracer.TraceConstants.KEY_SPAN;
 
@@ -197,6 +199,7 @@ public class ObservabilityUtils {
         } else {
             observers.forEach(observer -> observer.stopClientObservation(observerContext));
         }
+        observerContext.setFinished();
     }
 
     /**
@@ -210,7 +213,6 @@ public class ObservabilityUtils {
     }
 
     /**
-     *
      * @param context The {@link Context} instance.
      * @return the parent {@link ObserverContext} that includes a user trace or a new {@link ObserverContext}
      */
@@ -227,6 +229,14 @@ public class ObservabilityUtils {
             return bSpan.getTraceContext(headerName);
         }
         return Collections.emptyMap();
+    }
+
+    public static Map<String, String> getPropagatedSpanContext(Context context) {
+        AtomicReference<Map<String, String>> headers = new AtomicReference<>();
+        ObservabilityUtils.getParentContext(context).ifPresent(observerContext ->
+                headers.set((Map<String, String>) observerContext.getGlobalProps().get(PROPERTY_TRACE_PROPERTIES))
+        );
+        return headers.get();
     }
 
     public static void setObserverContextToWorkerExecutionContext(WorkerExecutionContext workerExecutionContext,
@@ -254,24 +264,33 @@ public class ObservabilityUtils {
             parent = parent.parent;
         }
         ObserverContext observerContext = (ctx != null) ? (ObserverContext) ctx : new ObserverContext();
+        while (observerContext.isFinished() && observerContext.getParent() != null) {
+            observerContext = observerContext.getParent();
+        }
+        ObserverContext currentObserverContext = observerContext;
         ancestors.forEach(w -> {
             if (w.localProps == null) {
                 w.localProps = new HashMap<>();
             }
-            w.localProps.put(KEY_OBSERVER_CONTEXT, observerContext);
+            w.localProps.put(KEY_OBSERVER_CONTEXT, currentObserverContext);
         });
         return observerContext;
     }
 
     private static ObserverContext getUserTraceParentObserverContext(WorkerExecutionContext parentCtx) {
         WorkerExecutionContext parent = parentCtx;
+        Object ctx = null;
         while (parent != null) {
-            Object ctx = (parent.localProps != null) ? parent.localProps.get(KEY_USER_TRACE_CONTEXT) : null;
+            ctx = (parent.localProps != null) ? parent.localProps.get(KEY_USER_TRACE_CONTEXT) : null;
             if (ctx != null) {
-                return (ObserverContext) ctx;
+                break;
             }
             parent = parent.parent;
         }
-        return new ObserverContext();
+        ObserverContext observerContext = (ctx != null) ? (ObserverContext) ctx : new ObserverContext();
+        while (observerContext.isFinished() && observerContext.getParent() != null) {
+            observerContext = observerContext.getParent();
+        }
+        return observerContext;
     }
 }

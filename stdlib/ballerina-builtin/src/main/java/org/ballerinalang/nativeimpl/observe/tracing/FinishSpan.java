@@ -50,7 +50,7 @@ public class FinishSpan extends BlockingNativeCallableUnit {
         } else {
             span.setBooleanField(0, 1);
             ObserverContext observeContext = (ObserverContext) span.getNativeData(NATIVE_SPAN_DATA);
-            OpenTracerBallerinaWrapper.getInstance().finishSpan(observeContext, context);
+            OpenTracerBallerinaWrapper.getInstance().finishSpan(observeContext);
         }
     }
 }

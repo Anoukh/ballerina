@@ -49,6 +49,8 @@ public class ObserverContext {
 
     private boolean started;
 
+    private boolean finished;
+
     private ObserverContext parent;
 
     private boolean userTrace;
@@ -125,6 +127,14 @@ public class ObserverContext {
         this.started = true;
     }
 
+    public boolean isFinished() {
+        return finished;
+    }
+
+    public void setFinished() {
+        this.finished = true;
+    }
+
     public ObserverContext getParent() {
         return parent;
     }
@@ -146,4 +156,5 @@ public class ObserverContext {
     public Map<String, Object> getGlobalProps() {
         return this.globalProps;
     }
+
 }
