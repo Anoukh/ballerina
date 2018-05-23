@@ -120,6 +120,7 @@ public class BallerinaHTTPConnectorListener implements HttpConnectorListener {
             ctx.addTag(TAG_KEY_HTTP_METHOD, (String) inboundMessage.getProperty(HttpConstants.HTTP_METHOD));
             ctx.addTag(TAG_KEY_PROTOCOL, (String) inboundMessage.getProperty(HttpConstants.PROTOCOL));
             ctx.addTag(TAG_KEY_HTTP_URL, (String) inboundMessage.getProperty(HttpConstants.REQUEST_URL));
+            ctx.getGlobalProps().put(PROPERTY_TRACE_PROPERTIES, httpHeaders);
         });
 
         CallableUnitCallback callback = new HttpCallableUnitCallback(inboundMessage);

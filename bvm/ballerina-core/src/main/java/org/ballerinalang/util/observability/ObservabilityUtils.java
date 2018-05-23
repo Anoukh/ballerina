@@ -21,6 +21,7 @@ import org.ballerinalang.bre.Context;
 import org.ballerinalang.bre.bvm.WorkerExecutionContext;
 import org.ballerinalang.config.ConfigRegistry;
 import org.ballerinalang.util.codegen.ServiceInfo;
+import org.ballerinalang.util.program.BLangVMUtils;
 import org.ballerinalang.util.tracer.BSpan;
 
 import java.util.ArrayList;
@@ -31,10 +32,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.ballerinalang.util.observability.ObservabilityConstants.CONFIG_METRICS_ENABLED;
 import static org.ballerinalang.util.observability.ObservabilityConstants.CONFIG_TRACING_ENABLED;
 import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_OBSERVER_CONTEXT;
+import static org.ballerinalang.util.observability.ObservabilityConstants.KEY_USER_TRACE_CONTEXT;
+import static org.ballerinalang.util.observability.ObservabilityConstants.PROPERTY_TRACE_PROPERTIES;
+import static org.ballerinalang.util.observability.ObservabilityConstants.UNKNOWN_SERVICE;
 import static org.ballerinalang.util.tracer.TraceConstants.KEY_SPAN;
 
 /**
@@ -128,11 +133,11 @@ public class ObservabilityUtils {
         ctx.setConnectorName(connectorName);
         ctx.setActionName(actionName);
         if (parentCtx != null) {
-            ServiceInfo serviceInfo = (ServiceInfo) parentCtx.globalProps.get("SERVICE_INFO");
+            ServiceInfo serviceInfo = BLangVMUtils.getServiceInfo(parentCtx);
             if (serviceInfo != null) {
                 ctx.setServiceName(serviceInfo.getType().toString());
             } else {
-                ctx.setServiceName("BallerinaMain");
+                ctx.setServiceName(UNKNOWN_SERVICE);
             }
             continueClientObservation(ctx, parentCtx);
         }
@@ -194,6 +199,7 @@ public class ObservabilityUtils {
         } else {
             observers.forEach(observer -> observer.stopClientObservation(observerContext));
         }
+        observerContext.setFinished();
     }
 
     /**
@@ -206,12 +212,31 @@ public class ObservabilityUtils {
                 : Optional.empty();
     }
 
-    public static Map<String, String> getContextProperties(ObserverContext observerContext) {
+    /**
+     * @param context The {@link Context} instance.
+     * @return the parent {@link ObserverContext} that includes a user trace or a new {@link ObserverContext}
+     */
+    public static Optional<ObserverContext> getUserTraceParentContext(Context context) {
+        return enabled ?
+                Optional.of(
+                        getUserTraceParentObserverContext(context.getParentWorkerExecutionContext()))
+                : Optional.empty();
+    }
+
+    public static Map<String, String> getContextProperties(ObserverContext observerContext, String headerName) {
         BSpan bSpan = (BSpan) observerContext.getProperty(KEY_SPAN);
         if (bSpan != null) {
-            return bSpan.getTraceContext();
+            return bSpan.getTraceContext(headerName);
         }
         return Collections.emptyMap();
+    }
+
+    public static Map<String, String> getPropagatedSpanContext(Context context) {
+        AtomicReference<Map<String, String>> headers = new AtomicReference<>();
+        ObservabilityUtils.getParentContext(context).ifPresent(observerContext ->
+                headers.set((Map<String, String>) observerContext.getGlobalProps().get(PROPERTY_TRACE_PROPERTIES))
+        );
+        return headers.get();
     }
 
     public static void setObserverContextToWorkerExecutionContext(WorkerExecutionContext workerExecutionContext,
@@ -239,12 +264,33 @@ public class ObservabilityUtils {
             parent = parent.parent;
         }
         ObserverContext observerContext = (ctx != null) ? (ObserverContext) ctx : new ObserverContext();
+        while (observerContext.isFinished() && observerContext.getParent() != null) {
+            observerContext = observerContext.getParent();
+        }
+        ObserverContext currentObserverContext = observerContext;
         ancestors.forEach(w -> {
             if (w.localProps == null) {
                 w.localProps = new HashMap<>();
             }
-            w.localProps.put(KEY_OBSERVER_CONTEXT, observerContext);
+            w.localProps.put(KEY_OBSERVER_CONTEXT, currentObserverContext);
         });
+        return observerContext;
+    }
+
+    private static ObserverContext getUserTraceParentObserverContext(WorkerExecutionContext parentCtx) {
+        WorkerExecutionContext parent = parentCtx;
+        Object ctx = null;
+        while (parent != null) {
+            ctx = (parent.localProps != null) ? parent.localProps.get(KEY_USER_TRACE_CONTEXT) : null;
+            if (ctx != null) {
+                break;
+            }
+            parent = parent.parent;
+        }
+        ObserverContext observerContext = (ctx != null) ? (ObserverContext) ctx : new ObserverContext();
+        while (observerContext.isFinished() && observerContext.getParent() != null) {
+            observerContext = observerContext.getParent();
+        }
         return observerContext;
     }
 }

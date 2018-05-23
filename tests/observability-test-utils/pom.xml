@@ -115,6 +115,7 @@
                             <artifactSet>
                                 <includes>
                                     <include>io.opentracing:opentracing-mock</include>
+                                    <include>com.google.code.gson:gson</include>
                                 </includes>
                             </artifactSet>
                             <filters>

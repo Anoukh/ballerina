@@ -143,25 +143,24 @@ public type Span object {
         P{{tagValue}} value of the tag
         R{{}} An error if an error occured while attaching tag to the span
     }
-    public native function addTag(string tagKey, string tagValue) returns error?;
+    public native function addTag(string tagKey, string tagValue) returns (error?);
 
     documentation {
         Finish the current span.
 
     }
-    public native function finish() returns error?;
+    public native function finish() returns (error?);
 
 };
 
 documentation {
     Start a span.
 
-    P{{serviceName}} Name of the service the span should belong to
     P{{spanName}} Name of the span
     P{{tags}} tags to be associated to the span
     R{{Span}} An instance of the started span
 }
-public native function startSpan(string serviceName, string spanName, map? tags = ()) returns Span;
+public native function startSpan(string spanName, map? tags = (), boolean userTrace = false) returns (Span);
 
 // Native implementation to avoid reading configuration file
 //public native function isTraceEnabled() returns boolean {}
