@@ -1278,14 +1278,14 @@ public class CPU {
                 i = operands[0];
                 j = operands[1];
                 k = operands[2];
-                bArray = (BRefValueArray) sf.refRegs[i];
-                if (bArray == null) {
+                BNewArray bNewArray = (BNewArray) sf.refRegs[i];
+                if (bNewArray == null) {
                     handleNullRefError(ctx);
                     break;
                 }
-
                 try {
-                    sf.refRegs[k] = bArray.get(sf.longRegs[j]);
+                    long index = sf.longRegs[j];
+                    sf.refRegs[k] = execArrayGetOperation(bNewArray, index);
                 } catch (Exception e) {
                     ctx.setError(BLangVMErrors.createError(ctx, e.getMessage()));
                     handleError(ctx);
@@ -1481,14 +1481,24 @@ public class CPU {
                 i = operands[0];
                 j = operands[1];
                 k = operands[2];
-                bArray = (BRefValueArray) sf.refRegs[i];
-                if (bArray == null) {
+                BNewArray bNewArray = (BNewArray) sf.refRegs[i];
+                if (bNewArray == null) {
                     handleNullRefError(ctx);
                     break;
                 }
 
                 try {
-                    bArray.add(sf.longRegs[j], sf.refRegs[k]);
+                    long index = sf.longRegs[j];
+                    BRefType refReg = sf.refRegs[k];
+                    BType sourceType = (refReg != null) ? refReg.getType() : BTypes.typeNull;
+                    if (bNewArray.getType().getTag() == TypeTags.ARRAY_TAG) {
+                        BType elementType = ((BArrayType) bNewArray.getType()).getElementType();
+                        if (!isAssignable(sourceType, elementType)) {
+                            throw BLangExceptionHelper.getRuntimeException(RuntimeErrors.TYPE_MISMATCH,
+                                    elementType, sourceType);
+                        }
+                    }
+                    execArrayAddOperation(bNewArray, index, refReg);
                 } catch (Exception e) {
                     ctx.setError(BLangVMErrors.createError(ctx, e.getMessage()));
                     handleError(ctx);
@@ -2605,6 +2615,62 @@ public class CPU {
         }
     }
 
+    private static BRefType<?> execArrayGetOperation(BNewArray array, long index) {
+        switch (array.getTag()) {
+            case TypeTags.BOOLEAN_ARRAY_TAG:
+                BBooleanArray bBooleanArray = (BBooleanArray) array;
+                int i = bBooleanArray.get(index);
+                return i == 0 ? new BBoolean(false) : new BBoolean(true);
+            case TypeTags.BYTE_ARRAY_TAG:
+                BByteArray bByteArray = (BByteArray) array;
+                return new BInteger(bByteArray.get(index));
+            case TypeTags.FLOAT_ARRAY_TAG:
+                BFloatArray bFloatArray = (BFloatArray) array;
+                return new BFloat(bFloatArray.get(index));
+            case TypeTags.INT_ARRAY_TAG:
+                BIntArray bIntArray = (BIntArray) array;
+                return new BInteger(bIntArray.get(index));
+            case TypeTags.REF_ARRAY_TAG:
+                BRefValueArray bRefValueArray = (BRefValueArray) array;
+                return bRefValueArray.get(index);
+            case TypeTags.STRING_ARRAY_TAG:
+                BStringArray bStringArray = (BStringArray) array;
+                return new BString(bStringArray.get(index));
+            default:
+                return null;
+        }
+    }
+
+    private static void execArrayAddOperation(BNewArray array, long index, BRefType refType) {
+        switch (array.getTag()) {
+            case TypeTags.BOOLEAN_ARRAY_TAG:
+                BBooleanArray bBooleanArray = (BBooleanArray) array;
+                boolean value = (boolean) refType.value();
+                bBooleanArray.add(index, value ? 1 : 0);
+                break;
+            case TypeTags.BYTE_ARRAY_TAG:
+                BByteArray bByteArray = (BByteArray) array;
+                bByteArray.add(index, (byte) refType.value());
+                break;
+            case TypeTags.FLOAT_ARRAY_TAG:
+                BFloatArray bFloatArray = (BFloatArray) array;
+                bFloatArray.add(index, (double) refType.value());
+                break;
+            case TypeTags.INT_ARRAY_TAG:
+                BIntArray bIntArray = (BIntArray) array;
+                bIntArray.add(index, (long) refType.value());
+                break;
+            case TypeTags.REF_ARRAY_TAG:
+                BRefValueArray bRefValueArray = (BRefValueArray) array;
+                bRefValueArray.add(index, refType);
+                break;
+            case TypeTags.STRING_ARRAY_TAG:
+                BStringArray bStringArray = (BStringArray) array;
+                bStringArray.add(index, (String) refType.value());
+                break;
+        }
+    }
+
     /**
      * Method to calculate and detect debug points when the instruction point is given.
      */
@@ -3013,6 +3079,23 @@ public class CPU {
         return ctx.respCtx.signal(new WorkerSignal(ctx, SignalType.RETURN, ctx.workerResult));
     }
 
+    private static boolean checkFiniteTypeAssignableByType(BType rhsType, BType lhsType) {
+        BFiniteType fType = (BFiniteType) lhsType;
+        if (rhsType == null) {
+            // we should not reach here
+            return false;
+        } else {
+            Iterator<BValue> valueSpaceItr = fType.valueSpace.iterator();
+            while (valueSpaceItr.hasNext()) {
+                BValue valueSpaceItem = valueSpaceItr.next();
+                if (valueSpaceItem.getType().getTag() == rhsType.getTag()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private static boolean checkFiniteTypeAssignable(BValue bRefTypeValue, BType lhsType) {
         BFiniteType fType = (BFiniteType) lhsType;
         if (bRefTypeValue == null) {
@@ -3160,6 +3243,9 @@ public class CPU {
             return checkArrayCast(sourceArrayType.getElementType(), targetArrayType.getElementType());
         } else if (sourceType.getTag() == TypeTags.ARRAY_TAG) {
             return targetType.getTag() == TypeTags.ANY_TAG;
+
+        } else if (targetType.getTag() == TypeTags.UNION_TAG) {
+            return checkUnionAssignable(sourceType, targetType);
         }
 
         return sourceType.equals(targetType);
@@ -3306,7 +3392,7 @@ public class CPU {
         }
 
         for (int i = 0; i < source.paramTypes.length; i++) {
-            if (!isSameType(source.paramTypes[i], target.paramTypes[i])) {
+            if (!isAssignable(source.paramTypes[i], target.paramTypes[i])) {
                 return false;
             }
         }
@@ -3324,7 +3410,7 @@ public class CPU {
                                                                          BAttachedFunction lhsFunc) {
         return Arrays.stream(rhsFuncs)
                 .filter(rhsFunc -> lhsFunc.funcName.equals(rhsFunc.funcName))
-                .filter(rhsFunc -> checkFunctionTypeEquality(lhsFunc.type, rhsFunc.type))
+                .filter(rhsFunc -> checkFunctionTypeEquality(rhsFunc.type, lhsFunc.type))
                 .findFirst()
                 .orElse(null);
     }
@@ -3910,6 +3996,11 @@ public class CPU {
     }
 
     public static boolean isAssignable(BType sourceType, BType targetType) {
+
+        if (sourceType.getTag() == TypeTags.NULL_TAG && targetType.getTag() == TypeTags.JSON_TAG) {
+            return true;
+        }
+
         if (targetType.getTag() == TypeTags.UNION_TAG) {
             return checkUnionAssignable(sourceType, targetType);
         }
@@ -3931,6 +4022,10 @@ public class CPU {
 
         if (sourceType.getTag() == TypeTags.TUPLE_TAG && targetType.getTag() == TypeTags.TUPLE_TAG) {
             return checkTupleAssignable(sourceType, targetType);
+        }
+
+        if (targetType.getTag() == TypeTags.FINITE_TYPE_TAG) {
+            return checkFiniteTypeAssignableByType(sourceType, targetType);
         }
 
         return checkCastByType(sourceType, targetType);

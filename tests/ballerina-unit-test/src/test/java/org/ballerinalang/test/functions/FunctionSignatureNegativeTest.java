@@ -33,7 +33,7 @@ public class FunctionSignatureNegativeTest {
         CompileResult result = BCompileUtil.compile("test-src/functions/different-function-signatures-negative.bal");
         BAssertUtil.validateError(result, i++, "redeclared symbol 'c'", 1, 66);
 
-        BAssertUtil.validateError(result, i++, "incompatible types: expected 'any[]', found 'int[]'", 10, 36);
+//        BAssertUtil.validateError(result, i++, "incompatible types: expected 'any[]', found 'int[]'", 10, 36);
 
         BAssertUtil.validateError(result, i++, "redeclared argument 'a'", 17, 19);
 

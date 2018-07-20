@@ -131,12 +131,14 @@ function testFuncPointerConversion() returns (int) {
     return personFunc(p);
 }
 
-function testAnyToFuncPointerConversion_2() returns (int) {
-    any anyFunc =  (Student s) => (int) {
-                        return s.getAge();
-                    };
+// As per Mutability Student can be Saved in a Person object
 
-    function (Person) returns (int) personFunc = check <function (Person) returns (int)> anyFunc;
-    Person p = new Person(23);
-    return personFunc(p);
-}
+//function testAnyToFuncPointerConversion_2() returns (int) {
+//    any anyFunc = (Student s) => (int) {
+//                        return s.getAge();
+//                    };
+//
+//    function (Person) returns (int) personFunc = check <function (Person) returns (int)> anyFunc;
+//    Person p = new Person(23);
+//    return personFunc(p);
+//}
