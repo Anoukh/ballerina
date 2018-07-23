@@ -1481,8 +1481,8 @@ public class CPU {
                 i = operands[0];
                 j = operands[1];
                 k = operands[2];
-                BNewArray bNewArray = (BNewArray) sf.refRegs[i];
-                if (bNewArray == null) {
+                BNewArray list = (BNewArray) sf.refRegs[i];
+                if (list == null) {
                     handleNullRefError(ctx);
                     break;
                 }
@@ -1491,14 +1491,26 @@ public class CPU {
                     long index = sf.longRegs[j];
                     BRefType refReg = sf.refRegs[k];
                     BType sourceType = (refReg != null) ? refReg.getType() : BTypes.typeNull;
-                    if (bNewArray.getType().getTag() == TypeTags.ARRAY_TAG) {
-                        BType elementType = ((BArrayType) bNewArray.getType()).getElementType();
-                        if (!isAssignable(sourceType, elementType)) {
-                            throw BLangExceptionHelper.getRuntimeException(RuntimeErrors.TYPE_MISMATCH,
-                                    elementType, sourceType);
-                        }
+                    switch (list.getType().getTag()) {
+                        case TypeTags.ARRAY_TAG:
+                            BType elementType = ((BArrayType) list.getType()).getElementType();
+                            if (!isAssignable(sourceType, elementType)) {
+                                throw BLangExceptionHelper.getRuntimeException(RuntimeErrors.TYPE_MISMATCH,
+                                        elementType, sourceType);
+                            }
+                            break;
+                        case TypeTags.TUPLE_TAG:
+                            elementType = ((BTupleType) list.getType()).getTupleTypes().get((int) index);
+                            if (!(isAssignable(sourceType, elementType)
+                                    || isRecordToMapAssignable(sourceType, elementType))) {
+                                throw BLangExceptionHelper.getRuntimeException(RuntimeErrors.TYPE_MISMATCH,
+                                        elementType, sourceType);
+                            }
+                            break;
+                        default:
+                            break;
                     }
-                    execArrayAddOperation(bNewArray, index, refReg);
+                    execListAddOperation(list, index, refReg);
                 } catch (Exception e) {
                     ctx.setError(BLangVMErrors.createError(ctx, e.getMessage()));
                     handleError(ctx);
@@ -2641,7 +2653,7 @@ public class CPU {
         }
     }
 
-    private static void execArrayAddOperation(BNewArray array, long index, BRefType refType) {
+    private static void execListAddOperation(BNewArray array, long index, BRefType refType) {
         switch (array.getTag()) {
             case TypeTags.BOOLEAN_ARRAY_TAG:
                 BBooleanArray bBooleanArray = (BBooleanArray) array;
@@ -3993,6 +4005,11 @@ public class CPU {
         }
 
         return checkCast(value, constraintType);
+    }
+
+    private static boolean isRecordToMapAssignable(BType rhsType, BType lhsType) {
+        return (rhsType.getTag() == TypeTags.RECORD_TYPE_TAG || rhsType.getTag() == TypeTags.OBJECT_TYPE_TAG)
+                && lhsType.getTag() == TypeTags.MAP_TAG;
     }
 
     public static boolean isAssignable(BType sourceType, BType targetType) {
