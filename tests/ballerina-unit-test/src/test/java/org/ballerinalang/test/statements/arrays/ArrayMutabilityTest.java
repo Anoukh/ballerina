@@ -58,44 +58,13 @@ public class ArrayMutabilityTest {
     public void testInvalidAssignment() {
         BRunUtil.invoke(compileResult, "testInvalidAssignment");
     }
+    @Test(description = "",
+            expectedExceptions = {BLangRuntimeException.class},
+            expectedExceptionsMessageRegExp =
+                    ".*message: type mismatch: expected type 'int', found type 'null.*")
+    public void testArrayWithBasicTypeCovariance() {
+        BRunUtil.invoke(compileResult, "testArrayWithBasicTypeCovariance");
+    }
 
-//    @Test
-//    public void testNegativeSealedArrays() {
-//        BAssertUtil.validateError(resultNegative, 0, "array index out of range: index: '5', size: '5'", 19, 30);
-//        BAssertUtil.validateError(resultNegative, 1, "array index out of range: index: '5', size: '5'", 25, 33);
-//        BAssertUtil.validateError(
-//                resultNegative, 2, "size mismatch in sealed array. expected '4', but found '3'", 30, 31);
-//        BAssertUtil.validateError(
-//                resultNegative, 3, "size mismatch in sealed array. expected '4', but found '5'", 31, 31);
-//        BAssertUtil.validateError(
-//                resultNegative, 4, "array index out of range: index: '5', size: '5'", 37, 18);
-//        BAssertUtil.validateError(
-//                resultNegative, 5, "array index out of range: index: '5', size: '5'", 38, 18);
-//        BAssertUtil.validateError(
-//                resultNegative, 6, "invalid usage of sealed type: array not initialized", 39, 5);
-//        BAssertUtil.validateError(
-//                resultNegative, 7, "incompatible types: expected 'int[3]', found 'int[]'", 46, 17);
-//        BAssertUtil.validateError(
-//                resultNegative, 8, "incompatible types: expected 'boolean[4]', found 'boolean[3]'", 52, 47);
-//        BAssertUtil.validateError(
-//                resultNegative, 9, "incompatible types: expected 'string[2]', found 'string[]'", 52, 34);
-//        BAssertUtil.validateError(
-//                resultNegative, 10, "ambiguous type 'int|int[]|int[4]'", 63, 30);
-//        BAssertUtil.validateError(
-//                resultNegative, 11, "ambiguous type 'int|int[]|int[4]|int[5]'", 65, 40);
-//        BAssertUtil.validateError(
-//                resultNegative, 12, "unreachable pattern: preceding patterns are too" +
-//                        " general or the pattern ordering is not correct", 73, 9);
-//        BAssertUtil.validateError(
-//                resultNegative, 13, "size mismatch in sealed array. expected '4', but found '2'", 78, 18);
-//        BAssertUtil.validateError(
-//                resultNegative, 14, "size mismatch in sealed array. expected '4', but found '5'", 79, 18);
-//        BAssertUtil.validateError(
-//                resultNegative, 15, "array index out of range: index: '4', size: '4'", 82, 8);
-//        BAssertUtil.validateError(
-//                resultNegative, 16, "invalid usage of sealed type: can not infer array size", 84, 21);
-//        BAssertUtil.validateError(
-//                resultNegative, 17, "incompatible types: expected 'json[3]', found 'json[]'", 86, 18);
-//    }
 
 }

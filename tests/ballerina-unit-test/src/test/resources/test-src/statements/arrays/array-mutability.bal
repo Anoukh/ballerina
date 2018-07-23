@@ -64,4 +64,11 @@ function testInvalidAssignment() {
     personArray[1] = student1;
 }
 
-// TODO: Add basic type array tests
+function testArrayWithBasicTypeCovariance() {
+    int[] x = [1, 2, 3, 4];
+    int?[] y = x;
+    y[0] = 5;
+    y[1] = (); // Runtime Exception
+}
+
+// TODO: Add More basic type array tests. And element access test cases
