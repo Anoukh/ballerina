@@ -9,7 +9,10 @@ service echo66 on testEP {
         consumes: ["application/xml"]
     }
     resource function echo1(http:Caller caller, http:Request req) {
-        _ = caller->respond({ "msg": "wso2" });
+        error? err = caller->respond({ "msg": "wso2" });
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -18,7 +21,10 @@ service echo66 on testEP {
         produces: ["text/xml", "application/xml "]
     }
     resource function echo2(http:Caller caller, http:Request req) {
-        _ = caller->respond({ "msg": "wso22" });
+        error? err = caller->respond({ "msg": "wso22" });
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -28,7 +34,10 @@ service echo66 on testEP {
         produces: ["text/css", "application/json"]
     }
     resource function echo3(http:Caller caller, http:Request req) {
-        _ = caller->respond({ "msg": "wso222" });
+        error? err = caller->respond({ "msg": "wso222" });
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -38,12 +47,18 @@ service echo66 on testEP {
         produces: ["Application/JsON"]
     }
     resource function echo4(http:Caller caller, http:Request req) {
-        _ = caller->respond({ "msg": "wso222" });
+        error? err = caller->respond({ "msg": "wso222" });
+        if err is error {
+            panic err;
+        }
     }
 }
 
 service echo67 on testEP {
     resource function echo1(http:Caller caller, http:Request req) {
-        _ = caller->respond({ "echo33": "echo1" });
+        error? err = caller->respond({ "echo33": "echo1" });
+        if err is error {
+            panic err;
+        }
     }
 }

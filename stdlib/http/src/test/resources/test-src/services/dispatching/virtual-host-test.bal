@@ -31,7 +31,10 @@ service Host1 on mockEP {
         http:Response res = new;
         json responseJson = { "echo": "abc.com" };
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }
 
@@ -47,7 +50,10 @@ service Host2 on mockEP {
         http:Response res = new;
         json responseJson = { "echo": "xyz.org" };
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }
 
@@ -62,6 +68,9 @@ service Host3 on mockEP {
         http:Response res = new;
         json responseJson = { "echo": "no host" };
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }

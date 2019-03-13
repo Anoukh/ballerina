@@ -13,6 +13,9 @@ service echo on echoEP {
     }
     resource function echo1 (http:Caller caller, http:Request req, string key, int person) {
         http:Response res = new;
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }

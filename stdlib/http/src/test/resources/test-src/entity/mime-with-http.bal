@@ -22,7 +22,10 @@ service echo on mockEP {
         }
 
         response.setEntity(responseEntity);
-        _ = caller -> respond(response);
+        error? err = caller->respond(response);
+        if err is error {
+            panic err;
+        }
     }
 }
 

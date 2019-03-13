@@ -13,7 +13,10 @@ service hello on mockEP {
         json connectionJson = {protocol:caller.protocol};
         res.statusCode = 200;
         res.setJsonPayload(untaint connectionJson);
-        _ = caller -> respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -25,6 +28,9 @@ service hello on mockEP {
         json connectionJson = {local:{host:caller.localAddress.host, port:caller.localAddress.port}};
         res.statusCode = 200;
         res.setJsonPayload(untaint connectionJson);
-        _ = caller -> respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }

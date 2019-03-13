@@ -19,6 +19,9 @@ service hello1 on passthruEP {
     resource function sample(http:Caller caller, http:Request req) {
         http:Response res = new;
         res.setJsonPayload({hello:"common service"});
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }

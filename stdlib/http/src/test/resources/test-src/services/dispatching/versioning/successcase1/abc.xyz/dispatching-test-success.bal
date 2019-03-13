@@ -19,7 +19,10 @@ service hello1 on passthruEP {
     resource function sample(http:Caller caller, http:Request req) {
         http:Response res = new;
         res.setJsonPayload({hello:"common service"});
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }
 
@@ -37,7 +40,10 @@ service hello2 on passthruEP {
     resource function sample (http:Caller caller, http:Request req) {
         http:Response res = new;
         res.setJsonPayload({hello:"Only template"});
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }
 
@@ -55,7 +61,10 @@ service hello3 on passthruEP {
     resource function sample(http:Caller caller, http:Request req) {
         http:Response res = new;
         res.setJsonPayload({hello:"only allow no version"});
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }
 
@@ -73,7 +82,10 @@ service hello4 on passthruEP {
     resource function sample(http:Caller caller, http:Request req) {
         http:Response res = new;
         res.setJsonPayload({hello:"only match major"});
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }
 
@@ -91,6 +103,9 @@ service hello5 on passthruEP {
     resource function sample(http:Caller caller, http:Request req) {
         http:Response res = new;
         res.setJsonPayload({hello:"without version segment in basePath"});
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }

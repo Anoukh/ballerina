@@ -92,7 +92,10 @@ service hello on mockEP {
     }
     resource function echo1 (http:Caller caller, http:Request req) {
         http:Response res = new;
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -101,7 +104,10 @@ service hello on mockEP {
     resource function echo2 (http:Caller caller, http:Request req, string phase) {
         http:Response res = new;
         res.reasonPhrase = phase;
-        _ = caller->respond(untaint res);
+        error? err = caller->respond(untaint res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -110,7 +116,10 @@ service hello on mockEP {
     resource function echo3 (http:Caller caller, http:Request req) {
         http:Response res = new;
         res.statusCode = 203;
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -121,7 +130,10 @@ service hello on mockEP {
         res.addHeader(untaint key, value);
         string result = untaint res.getHeader(untaint key);
         res.setJsonPayload({lang:result});
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -132,7 +144,10 @@ service hello on mockEP {
         res.setHeader(untaint header, value);
         string result = untaint res.getHeader(untaint header);
         res.setJsonPayload({value:result});
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -149,7 +164,10 @@ service hello on mockEP {
         } else {
             res.setJsonPayload(untaint returnResult.lang);
         }
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -165,7 +183,10 @@ service hello on mockEP {
         } else {
             res.setTextPayload(untaint returnResult);
         }
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -183,7 +204,10 @@ service hello on mockEP {
             var name = returnResult.getTextValue();
             res.setTextPayload(untaint name);
         }
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -198,7 +222,10 @@ service hello on mockEP {
             header = "value is null";
         }
         res.setJsonPayload({value:header});
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -214,6 +241,9 @@ service hello on mockEP {
             header = "value is null";
         }
         res.setJsonPayload({value:header});
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }

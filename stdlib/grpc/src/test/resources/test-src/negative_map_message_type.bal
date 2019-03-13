@@ -25,25 +25,31 @@ service UnsupportedMapType on ep {
     resource function testInputMapType(grpc:Caller caller, MapMessage msg) {
         io:println(msg);
         string message = "Testing Map types";
-        error? err = caller->send(message);
-        if (err is error) {
-            io:println("Error from Connector: " + err.reason());
+        error? err1 = caller->send(message);
+        if (err1 is error) {
+            io:println("Error from Connector: " + err1.reason());
         } else {
             io:println("Server send response : " + message);
         }
-        _ = caller->complete();
+        error? err2 = caller->complete();
+        if err2 is error {
+            panic err2;
+        }
     }
 
     resource function testOutputMapType(grpc:Caller caller, string msg) {
         io:println(msg);
         MapMessage message = {};
-        error? err = caller->send(message);
-        if (err is error) {
-            io:println("Error from Connector: " + err.reason());
+        error? err1 = caller->send(message);
+        if (err1 is error) {
+            io:println("Error from Connector: " + err1.reason());
         } else {
             io:println("Server send response successfully");
         }
-        _ = caller->complete();
+        error? err2 = caller->complete();
+        if err2 is error {
+            panic err2;
+        }
     }
 }
 

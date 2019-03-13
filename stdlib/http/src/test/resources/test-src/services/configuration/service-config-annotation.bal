@@ -13,6 +13,9 @@ service helloWorldServiceConfig on helloEP {
     resource function sayHello (http:Caller caller, http:Request req) {
         http:Response res = new;
         res.setTextPayload("Hello World!!!");
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }

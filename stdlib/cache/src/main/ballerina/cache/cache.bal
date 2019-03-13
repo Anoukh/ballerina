@@ -78,9 +78,15 @@ public type Cache object {
         };
         task:Scheduler cacheCleanupTimer = new(cacheCleanupTimerConfiguration);
 
-        _ = cacheCleanupTimer.attach(cacheCleanupService);
-        _ = cacheCleanupTimer.start();
+        error? err1 = cacheCleanupTimer.attach(cacheCleanupService);
+        error? err2 = cacheCleanupTimer.start();
 
+        if err1 is error {
+            panic err1;
+        }
+        if err2 is error {
+            panic err2;
+        }
     }
 
     # Checks whether the given key has an accociated cache value.
@@ -319,6 +325,9 @@ function checkAndAdd(int numberOfKeysToEvict, string[] cacheKeys, int[] timestam
 # Cleanup service which cleans the cache periodically.
 service cacheCleanupService = service {
     resource function onTrigger() {
-        _ = runCacheExpiry();
+        error? err = runCacheExpiry();
+        if err is error {
+            panic err;
+        }
     }
 };

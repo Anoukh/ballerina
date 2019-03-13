@@ -46,17 +46,29 @@ public type Scheduler object {
                     int timeDiff = timestamp > time:currentTime().time ? timestamp - time:currentTime().time : 0;
                     int timeDelay = timeDiff > 0 ? timeDiff : -1;
 
-                    _ = self.timer.stop();
+                    error? err1 = self.timer.stop();
                     self.timer = new({ interval: timeDiff, initialDelay: timeDelay, noOfRecurrences: 1 });
-                    _ = self.timer.attach(schedulerService, attachment = self);
-                    _ = self.timer.start();
+                    error? err2 = self.timer.attach(schedulerService, attachment = self);
+                    error? err3 = self.timer.start();
+                    if err1 is error {
+                        // todo: handle error
+                    }
+                    if err2 is error {
+                        // todo: handle error
+                    }
+                    if err3 is error {
+                        // todo: handle error
+                    }
                 }
             }
         }
     }
 
     public function wrapperFunc() {
-        _ = self.sendTimerEvents();
+        error? err = self.sendTimerEvents();
+        if err is error {
+            // todo: handle error
+        }
     }
 
     public function sendTimerEvents() returns error? {
@@ -74,7 +86,10 @@ public type Scheduler object {
             currentTime = time:currentTime().time;
         }
 
-        _ = self.timer.stop();
+        error? err1 = self.timer.stop();
+        if err1 is error {
+            // todo: handle error
+        }
         self.timer = new({ interval: 1 });
 
         first = self.toNotifyQueue.getFirst();
@@ -85,8 +100,14 @@ public type Scheduler object {
                 _ = self.wrapperFunc();
             } else {
                 self.timer = new({ interval: <int>first - currentTime, noOfRecurrences: 1 });
-                _ = self.timer.attach(schedulerService, attachment = self);
-                _ = self.timer.start();
+                error? err2 = self.timer.attach(schedulerService, attachment = self);
+                error? err3 = self.timer.start();
+                if err2 is error {
+                    // todo: handle error
+                }
+                if err3 is error {
+                    // todo: handle error
+                }
             }
         } else {
             lock {
@@ -94,8 +115,14 @@ public type Scheduler object {
                 if (self.toNotifyQueue.getFirst() != ()) {
                     self.running = true;
                     self.timer = new({ interval: 1, initialDelay: 0, noOfRecurrences: 1 });
-                    _ = self.timer.attach(schedulerService, attachment = self);
-                    _ = self.timer.start();
+                    error? err4 = self.timer.attach(schedulerService, attachment = self);
+                    error? err5 = self.timer.start();
+                    if err4 is error {
+                        panic err4;
+                    }
+                    if err5 is error {
+                        // todo: handle error
+                    }
                 }
             }
         }
@@ -105,6 +132,9 @@ public type Scheduler object {
 
 service schedulerService = service {
     resource function onTrigger(Scheduler scheduler) {
-        _ = scheduler.sendTimerEvents();
+        error? err = scheduler.sendTimerEvents();
+        if err is error {
+            // todo: handle error
+        }
     }
 };

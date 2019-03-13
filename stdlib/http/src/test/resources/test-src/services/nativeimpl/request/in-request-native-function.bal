@@ -3,7 +3,10 @@ import ballerina/io;
 import ballerina/mime;
 
 function testContentType(http:Request req, string contentTypeValue) returns string {
-    _ = req.setContentType(contentTypeValue);
+    error? err = req.setContentType(contentTypeValue);
+    if err is error {
+        panic err;
+    }
     return req.getContentType();
 }
 
@@ -104,7 +107,10 @@ service hello on mockEP {
         string result = untaint req.getHeader(untaint key);
         http:Response res = new;
         res.setJsonPayload({ lang: result });
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -114,7 +120,10 @@ service hello on mockEP {
         http:Response res = new;
         string method = req.method;
         res.setTextPayload(untaint method);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -124,7 +133,10 @@ service hello on mockEP {
         http:Response res = new;
         string url = req.rawPath;
         res.setTextPayload(untaint url);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -134,7 +146,10 @@ service hello on mockEP {
         http:Response res = new;
         string url = req.rawPath;
         res.setTextPayload(untaint url);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -144,7 +159,10 @@ service hello on mockEP {
         http:Response res = new;
         string header = untaint req.getHeader("content-type");
         res.setJsonPayload({ value: header });
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     //Enable this once the getContentLength is added back
@@ -170,7 +188,10 @@ service hello on mockEP {
         } else {
             res.setJsonPayload(untaint returnResult.lang);
         }
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -185,7 +206,10 @@ service hello on mockEP {
         } else {
             res.setTextPayload(untaint returnResult);
         }
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -201,7 +225,10 @@ service hello on mockEP {
             var name = returnResult.getTextValue();
             res.setTextPayload(untaint name);
         }
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -217,7 +244,10 @@ service hello on mockEP {
             string name = mime:byteArrayToString(returnResult, "UTF-8");
             res.setTextPayload(untaint name);
         }
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -232,7 +262,10 @@ service hello on mockEP {
         } else {
             res.setByteChannel(returnResult);
         }
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -248,7 +281,10 @@ service hello on mockEP {
         }
         http:Response res = new;
         res.setJsonPayload({ value: header });
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -266,7 +302,10 @@ service hello on mockEP {
         }
         http:Response res = new;
         res.setJsonPayload({ value: header });
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -280,7 +319,10 @@ service hello on mockEP {
 
         http:Response res = new;
         res.setJsonPayload({ value: result });
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -298,7 +340,10 @@ service hello on mockEP {
         } else {
             res.setJsonPayload(untaint returnResult);
         }
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -315,7 +360,10 @@ service hello on mockEP {
         } else {
             res.setJsonPayload({ lang: untaint returnResult });
         }
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -334,7 +382,10 @@ service hello on mockEP {
             var name = untaint returnResult.getTextValue();
             res.setJsonPayload({ lang: name });
         }
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -354,6 +405,9 @@ service hello on mockEP {
             string name = untaint mime:byteArrayToString(returnResult, "UTF-8");
             res.setJsonPayload({ lang: name });
         }
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }

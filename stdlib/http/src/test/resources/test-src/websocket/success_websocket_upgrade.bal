@@ -39,7 +39,10 @@ service proxy on httpListener {
     resource function sayHello(http:Caller caller, http:Request req) {
         http:Response res = new;
         res.setTextPayload("Successful");
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
 }

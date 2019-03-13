@@ -22,7 +22,10 @@ service echo on testEP {
     }
     resource function body1(http:Caller caller, http:Request req, string person) {
         json responseJson = { "Person": person };
-        _ = caller->respond(untaint responseJson);
+        error? err = caller->respond(untaint responseJson);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -32,7 +35,10 @@ service echo on testEP {
     }
     resource function body2(http:Caller caller, http:Request req, string key, string person) {
         json responseJson = { Key: key, Person: person };
-        _ = caller->respond(untaint responseJson);
+        error? err = caller->respond(untaint responseJson);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -42,7 +48,10 @@ service echo on testEP {
     resource function body3(http:Caller caller, http:Request req, json person) {
         json name = untaint person.name;
         json team = untaint person.team;
-        _ = caller->respond({ Key: name, Team: team });
+        error? err = caller->respond({ Key: name, Team: team });
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -52,7 +61,10 @@ service echo on testEP {
     resource function body4(http:Caller caller, http:Request req, xml person) {
         string name = untaint person.getElementName();
         string team = untaint person.getTextValue();
-        _ = caller->respond({ Key: name, Team: team });
+        error? err = caller->respond({ Key: name, Team: team });
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -61,7 +73,10 @@ service echo on testEP {
     }
     resource function body5(http:Caller caller, http:Request req, byte[] person) {
         string name = untaint mime:byteArrayToString(person, "UTF-8");
-        _ = caller->respond({ Key: name });
+        error? err = caller->respond({ Key: name });
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -71,7 +86,10 @@ service echo on testEP {
     resource function body6(http:Caller caller, http:Request req, Person person) {
         string name = untaint person.name;
         int age = untaint person.age;
-        _ = caller->respond({ Key: name, Age: age });
+        error? err = caller->respond({ Key: name, Age: age });
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -79,7 +97,10 @@ service echo on testEP {
         body: "person"
     }
     resource function body7(http:Caller caller, http:Request req, Stock person) {
-        _ = caller->respond(());
+        error? err = caller->respond(());
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -89,9 +110,15 @@ service echo on testEP {
     resource function body8(http:Caller caller, http:Request req, Person[] persons) {
         var jsonPayload = json.convert(persons);
         if (jsonPayload is json) {
-            _ = caller->respond(untaint jsonPayload);
+            error? err = caller->respond(untaint jsonPayload);
+            if err is error {
+                panic err;
+            }
         } else {
-            _ = caller->respond(untaint string.convert(jsonPayload.detail().message));
+            error? err = caller->respond(untaint string.convert(jsonPayload.detail().message));
+            if err is error {
+                panic err;
+            }
         }
     }
 }

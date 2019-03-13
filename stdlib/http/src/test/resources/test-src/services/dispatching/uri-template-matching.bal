@@ -15,7 +15,10 @@ service echo11 on testEP {
         http:Response res = new;
         json responseJson = {"echo5":"echo5"};
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -26,7 +29,10 @@ service echo11 on testEP {
         http:Response res = new;
         json responseJson = {"echo3":abc};
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -37,7 +43,10 @@ service echo11 on testEP {
         http:Response res = new;
         json responseJson = {"first":abc, "echo4":"echo4"};
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
 
@@ -49,7 +58,10 @@ service echo11 on testEP {
         http:Response res = new;
         json responseJson = {"echo5":"any"};
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -62,7 +74,10 @@ service echo11 on testEP {
 
         http:Response res = new;
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -75,7 +90,10 @@ service echo11 on testEP {
 
         http:Response res = new;
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     resource function echo11(http:Caller caller, http:Request req) {
@@ -84,7 +102,10 @@ service echo11 on testEP {
 
         http:Response res = new;
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -95,7 +116,10 @@ service echo11 on testEP {
         http:Response res = new;
         json responseJson = {"echo12":abc};
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -108,7 +132,10 @@ service echo11 on testEP {
 
         http:Response res = new;
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -122,7 +149,10 @@ service echo11 on testEP {
 
         http:Response res = new;
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -137,7 +167,10 @@ service echo11 on testEP {
 
         http:Response res = new;
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -152,7 +185,10 @@ service echo11 on testEP {
 
         http:Response res = new;
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -166,7 +202,10 @@ service echo11 on testEP {
 
         http:Response res = new;
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -190,7 +229,10 @@ service echo22 on testEP {
         json responseJson = {"echo1":"echo1"};
         http:Response res = new;
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -201,7 +243,10 @@ service echo22 on testEP {
         http:Response res = new;
         json responseJson = {"echo2":"echo2"};
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -212,7 +257,10 @@ service echo22 on testEP {
         http:Response res = new;
         json responseJson = {"echo3":"echo3"};
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }
 
@@ -226,7 +274,10 @@ service echo33 on testEP {
 
         http:Response res = new;
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }
 
@@ -239,7 +290,10 @@ service echo44 on testEP {
         http:Response res = new;
         json responseJson = {"first":"zzz"};
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     resource function echo1(http:Caller caller, http:Request req) {
@@ -248,7 +302,10 @@ service echo44 on testEP {
 
         http:Response res = new;
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -259,7 +316,10 @@ service echo44 on testEP {
         http:Response res = new;
         json responseJson = {"first":"bar"};
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }
 
@@ -274,7 +334,10 @@ service echo55 on testEP {
 
         http:Response res = new;
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -284,7 +347,10 @@ service echo55 on testEP {
         http:Response res = new;
         json responseJson = {"echo55":"default"};
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -297,7 +363,10 @@ service echo55 on testEP {
 
         http:Response res = new;
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }
 
@@ -309,7 +378,10 @@ service echo66 on testEP {
         http:Response res = new;
         json responseJson = {"echo66":req.extraPathInfo};
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -322,7 +394,10 @@ service echo66 on testEP {
         }
         json responseJson = {"echo66":req.extraPathInfo};
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }
 
@@ -339,7 +414,10 @@ service WildcardService on testEP {
         http:Response res = new;
         json responseJson = {message:"Path Params Resource is invoked."};
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -349,7 +427,10 @@ service WildcardService on testEP {
         http:Response res = new;
         json responseJson = {message:"Wildcard Params Resource is invoked."};
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -359,7 +440,10 @@ service WildcardService on testEP {
         http:Response res = new;
         json responseJson = {aaa:aaa, bbb:bbb, ccc:ccc};
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -369,7 +453,10 @@ service WildcardService on testEP {
         http:Response res = new;
         json responseJson = {xxx:xxx, yyy:yyy};
         res.setJsonPayload(untaint responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 
     @http:ResourceConfig {
@@ -379,6 +466,9 @@ service WildcardService on testEP {
         http:Response res = new;
         json responseJson = {value:"capitalized"};
         res.setJsonPayload(responseJson);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
     }
 }

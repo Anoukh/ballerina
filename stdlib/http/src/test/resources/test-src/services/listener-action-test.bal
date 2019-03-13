@@ -14,7 +14,10 @@ service echo on echoEP {
     resource function echo(http:Caller caller, http:Request req) {
         http:Response res = new;
         res.setTextPayload(self.serviceLevelStringVar);
-        _ = caller->respond(res);
+        error? err = caller->respond(res);
+        if err is error {
+            panic err;
+        }
         self.serviceLevelStringVar = "done";
     }
 }

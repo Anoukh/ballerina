@@ -25,25 +25,31 @@ service UnsupportedJsonType on ep {
     resource function testInputJsonType(grpc:Caller caller, JsonMessage msg) {
         io:println(msg);
         string message = "Testing Json types";
-        error? err = caller->send(message);
-        if (err is error) {
-            io:println("Error from Connector: " + err.reason());
+        error? err1 = caller->send(message);
+        if (err1 is error) {
+            io:println("Error from Connector: " + err1.reason());
         } else {
             io:println("Server send response : " + message);
         }
-        _ = caller->complete();
+        error? err2 = caller->complete();
+        if err2 is error {
+            panic err2;
+        }
     }
 
     resource function testOutputJsonType(grpc:Caller caller, string msg) {
         io:println(msg);
         JsonMessage jsonMsg = {};
-        error? err = caller->send(jsonMsg);
-        if (err is error) {
-            io:println("Error from Connector: " + err.reason());
+        error? err1 = caller->send(jsonMsg);
+        if (err1 is error) {
+            io:println("Error from Connector: " + err1.reason());
         } else {
             io:println("Server send response successfully");
         }
-        _ = caller->complete();
+        error? err2 = caller->complete();
+        if err2 is error {
+            panic err2;
+        }
     }
 }
 

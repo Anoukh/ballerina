@@ -46,7 +46,10 @@ service {
         http:Response response = new;
         response.statusCode = http:ACCEPTED_202;
         response.setTextPayload("Ballerina Hub Service - Up and Running!");
-        _ = httpCaller->respond(response);
+        error? err1 = httpCaller->respond(response);
+        if err1 is error {
+            panic err1;
+        }
     }
 
     @http:ResourceConfig {

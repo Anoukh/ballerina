@@ -15,6 +15,9 @@ service hello on backendEP{
     resource function sayHello (http:Caller caller, http:Request request) {
         http:Response response = new;
         response.setTextPayload("Hello World!!!");
-        _ = caller -> respond(response);
+        error? err = caller->respond(response);
+        if err is error {
+            panic err;
+        }
     }
 }
