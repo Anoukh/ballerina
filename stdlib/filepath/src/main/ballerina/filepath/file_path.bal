@@ -19,7 +19,7 @@ import ballerina/log;
 import ballerina/system;
 
 boolean isWindows = system:getEnv("OS") != "";
-string pathSeparator = isWindows ? "\\" : "/";
+string pathSeparator = isWindows ? "\\" : "//";
 string pathListSeparator = isWindows ? ";" : ":";
 
 # Retrieves the absolute path from the provided location.

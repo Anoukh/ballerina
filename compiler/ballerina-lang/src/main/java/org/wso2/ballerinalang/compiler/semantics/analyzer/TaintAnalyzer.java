@@ -2080,7 +2080,7 @@ public class TaintAnalyzer extends BLangNodeVisitor {
             int defaultableParamCount = invokableSymbol.defaultableParams.size();
 
             int requiredArgsCount = invocationExpr.requiredArgs.size();
-            int namedArgsCount = invocationExpr.namedArgs.size();
+//            int namedArgsCount = invocationExpr.namedArgs.size();
             int restArgsCount = invocationExpr.restArgs.size();
 
             for (int argIndex = 0; argIndex < requiredArgsCount; argIndex++) {
@@ -2096,32 +2096,32 @@ public class TaintAnalyzer extends BLangNodeVisitor {
                     break;
                 }
             }
-            for (int argIndex = 0; argIndex < namedArgsCount; argIndex++) {
-                BLangExpression argExpr = invocationExpr.namedArgs.get(argIndex);
-                if (argExpr.getKind() == NodeKind.NAMED_ARGS_EXPR) {
-                    String currentNamedArgExprName = ((BLangNamedArgsExpression) argExpr).name.value;
-                    // Pick the index of this defaultable parameter in the invokable definition.
-                    int paramIndex = 0;
-                    for (int defaultableParamIndex = 0; defaultableParamIndex < defaultableParamCount;
-                         defaultableParamIndex++) {
-                        BVarSymbol defaultableParam = invokableSymbol.defaultableParams.get(defaultableParamIndex);
-                        if (defaultableParam.name.value.equals(currentNamedArgExprName)) {
-                            paramIndex = requiredParamCount + defaultableParamIndex;
-                            break;
-                        }
-                    }
-                    TaintedStatus argumentAnalysisResult = analyzeInvocationArgument(paramIndex, invocationExpr,
-                            argExpr, argTaintedStatusList);
-                    if (argumentAnalysisResult == TaintedStatus.IGNORED) {
-                        return;
-                    } else if (argumentAnalysisResult == TaintedStatus.TAINTED) {
-                        returnTaintedStatus = TaintedStatus.TAINTED;
-                    }
-                    if (stopAnalysis) {
-                        break;
-                    }
-                }
-            }
+//            for (int argIndex = 0; argIndex < namedArgsCount; argIndex++) {
+//                BLangExpression argExpr = invocationExpr.namedArgs.get(argIndex);
+//                if (argExpr.getKind() == NodeKind.NAMED_ARGS_EXPR) {
+//                    String currentNamedArgExprName = ((BLangNamedArgsExpression) argExpr).name.value;
+//                    // Pick the index of this defaultable parameter in the invokable definition.
+//                    int paramIndex = 0;
+//                    for (int defaultableParamIndex = 0; defaultableParamIndex < defaultableParamCount;
+//                         defaultableParamIndex++) {
+//                        BVarSymbol defaultableParam = invokableSymbol.defaultableParams.get(defaultableParamIndex);
+//                        if (defaultableParam.name.value.equals(currentNamedArgExprName)) {
+//                            paramIndex = requiredParamCount + defaultableParamIndex;
+//                            break;
+//                        }
+//                    }
+//                    TaintedStatus argumentAnalysisResult = analyzeInvocationArgument(paramIndex, invocationExpr,
+//                            argExpr, argTaintedStatusList);
+//                    if (argumentAnalysisResult == TaintedStatus.IGNORED) {
+//                        return;
+//                    } else if (argumentAnalysisResult == TaintedStatus.TAINTED) {
+//                        returnTaintedStatus = TaintedStatus.TAINTED;
+//                    }
+//                    if (stopAnalysis) {
+//                        break;
+//                    }
+//                }
+//            }
             for (int argIndex = 0; argIndex < restArgsCount; argIndex++) {
                 BLangExpression argExpr = invocationExpr.restArgs.get(argIndex);
                 // Pick the index of the rest parameter in the invokable definition.
@@ -2160,7 +2160,7 @@ public class TaintAnalyzer extends BLangNodeVisitor {
         int defaultableParamCount = invokableSymbol.defaultableParams.size();
 
         int requiredArgsCount = invocationExpr.requiredArgs.size();
-        int namedArgsCount = invocationExpr.namedArgs.size();
+//        int namedArgsCount = invocationExpr.namedArgs.size();
         int restArgsCount = invocationExpr.restArgs.size();
 
         for (int argIndex = 0; argIndex < requiredArgsCount; argIndex++) {
@@ -2172,24 +2172,24 @@ public class TaintAnalyzer extends BLangNodeVisitor {
             updateArgTaintedStatus(argExpr, argTaintedStatus);
         }
 
-        for (int argIndex = 0; argIndex < namedArgsCount; argIndex++) {
-            BLangExpression argExpr = invocationExpr.namedArgs.get(argIndex);
-            if (argExpr.getKind() == NodeKind.NAMED_ARGS_EXPR) {
-                String currentNamedArgExprName = ((BLangNamedArgsExpression) argExpr).name.value;
-                // Pick the index of this defaultable parameter in the invokable definition.
-                int paramIndex = 0;
-                for (int defaultableParamIndex = 0; defaultableParamIndex < defaultableParamCount;
-                     defaultableParamIndex++) {
-                    BVarSymbol defaultableParam = invokableSymbol.defaultableParams.get(defaultableParamIndex);
-                    if (defaultableParam.name.value.equals(currentNamedArgExprName)) {
-                        paramIndex = requiredParamCount + defaultableParamIndex;
-                        break;
-                    }
-                }
-                TaintedStatus argTaintedStatus = argTaintedStatusList.get(paramIndex);
-                updateArgTaintedStatus(argExpr, argTaintedStatus);
-            }
-        }
+//        for (int argIndex = 0; argIndex < namedArgsCount; argIndex++) {
+//            BLangExpression argExpr = invocationExpr.namedArgs.get(argIndex);
+//            if (argExpr.getKind() == NodeKind.NAMED_ARGS_EXPR) {
+//                String currentNamedArgExprName = ((BLangNamedArgsExpression) argExpr).name.value;
+//                // Pick the index of this defaultable parameter in the invokable definition.
+//                int paramIndex = 0;
+//                for (int defaultableParamIndex = 0; defaultableParamIndex < defaultableParamCount;
+//                     defaultableParamIndex++) {
+//                    BVarSymbol defaultableParam = invokableSymbol.defaultableParams.get(defaultableParamIndex);
+//                    if (defaultableParam.name.value.equals(currentNamedArgExprName)) {
+//                        paramIndex = requiredParamCount + defaultableParamIndex;
+//                        break;
+//                    }
+//                }
+//                TaintedStatus argTaintedStatus = argTaintedStatusList.get(paramIndex);
+//                updateArgTaintedStatus(argExpr, argTaintedStatus);
+//            }
+//        }
 
         for (int argIndex = 0; argIndex < restArgsCount; argIndex++) {
             BLangExpression argExpr = invocationExpr.restArgs.get(argIndex);

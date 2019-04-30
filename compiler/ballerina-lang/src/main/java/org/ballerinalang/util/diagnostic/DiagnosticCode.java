@@ -195,6 +195,8 @@ public enum DiagnosticCode {
     RECORD_INITIALIZER_INVOKED("explicit.invocation.of.record.init.is.not.allowed"),
     PKG_ALIAS_NOT_ALLOWED_HERE("pkg.alias.not.allowed.here"),
     INVALID_REST_ARGS("invalid.rest.args"),
+    POSITIONAL_ARG_NOT_ALLOWED("positional.arg.not.allowed"),
+    REST_ARG_NOT_ALLOWED_WITH_NAMED_ARGS("rest.arg.not.allowed.with.named.args"),
 
     MULTI_VALUE_RETURN_EXPECTED("multi.value.return.expected"),
     SINGLE_VALUE_RETURN_EXPECTED("single.value.return.expected"),

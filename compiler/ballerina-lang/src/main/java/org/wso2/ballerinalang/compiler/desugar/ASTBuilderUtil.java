@@ -61,6 +61,7 @@ import org.wso2.ballerinalang.compiler.tree.expressions.BLangServiceConstructorE
 import org.wso2.ballerinalang.compiler.tree.expressions.BLangSimpleVarRef;
 import org.wso2.ballerinalang.compiler.tree.expressions.BLangStatementExpression;
 import org.wso2.ballerinalang.compiler.tree.expressions.BLangTableLiteral;
+import org.wso2.ballerinalang.compiler.tree.expressions.BLangTernaryExpr;
 import org.wso2.ballerinalang.compiler.tree.expressions.BLangTypeConversionExpr;
 import org.wso2.ballerinalang.compiler.tree.expressions.BLangTypeInit;
 import org.wso2.ballerinalang.compiler.tree.expressions.BLangTypeTestExpr;
@@ -236,6 +237,20 @@ public class ASTBuilderUtil {
         return ifNode;
     }
 
+    static BLangTernaryExpr createTernaryExpr(DiagnosticPos pos,
+                                              BType type,
+                                              BLangExpression conditionExpr,
+                                              BLangExpression expression,
+                                              BLangExpression elseStmt) {
+        final BLangTernaryExpr ternaryExpr = (BLangTernaryExpr) TreeBuilder.createTernaryExpressionNode();
+        ternaryExpr.pos = pos;
+        ternaryExpr.type = type;
+        ternaryExpr.expr = conditionExpr;
+        ternaryExpr.thenExpr = expression;
+        ternaryExpr.elseExpr = elseStmt;
+        return ternaryExpr;
+    }
+
     static BLangTypeTestExpr createTypeTestExpr(DiagnosticPos pos, BLangExpression expr, BLangType type) {
         final BLangTypeTestExpr typeTestExpr = (BLangTypeTestExpr) TreeBuilder.createTypeTestExpressionNode();
         typeTestExpr.pos = pos;
@@ -271,6 +286,14 @@ public class ASTBuilderUtil {
     static BLangAssignment createAssignmentStmt(DiagnosticPos pos, BLangBlockStmt target) {
         final BLangAssignment assignment = (BLangAssignment) TreeBuilder.createAssignmentNode();
         assignment.pos = pos;
+        target.addStatement(assignment);
+        return assignment;
+    }
+
+    static BLangAssignment createAssignmentStmt(DiagnosticPos pos, BType type, BLangExpression varRef, BLangExpression rhsExpr,
+                                                BLangBlockStmt target) {
+        BLangAssignment assignment = createAssignmentStmt(pos, varRef, rhsExpr, false);
+        assignment.type = type;
         target.addStatement(assignment);
         return assignment;
     }
@@ -409,7 +432,7 @@ public class ASTBuilderUtil {
                                                                             SymbolResolver symResolver,
                                                                             BLangBuiltInMethod builtInFunction) {
         BLangInvocation invokeLambda = createInvocationExprMethod(pos, invokableSymbol, requiredArgs,
-                                                                  new ArrayList<>(), new ArrayList<>(), symResolver);
+                new ArrayList<>(), symResolver);
         invokeLambda.expr = expr;
         return new BLangInvocation.BLangBuiltInMethodInvocation(invokeLambda, builtInFunction);
     }
@@ -444,8 +467,8 @@ public class ASTBuilderUtil {
         final BLangInvocation invokeLambda = (BLangInvocation) TreeBuilder.createInvocationNode();
         invokeLambda.pos = pos;
         invokeLambda.requiredArgs.addAll(generateArgExprs(pos, requiredArgs, invokableSymbol.params, symResolver));
-        invokeLambda.namedArgs
-                .addAll(generateArgExprs(pos, namedArgs, invokableSymbol.defaultableParams, symResolver));
+//        invokeLambda.namedArgs
+//                .addAll(generateArgExprs(pos, namedArgs, invokableSymbol.defaultableParams, symResolver));
         invokeLambda.restArgs
                 .addAll(generateArgExprs(pos, restArgs, Lists.of(invokableSymbol.restParam), symResolver));
 
@@ -456,19 +479,18 @@ public class ASTBuilderUtil {
 
     static BLangInvocation createInvocationExprForMethod(DiagnosticPos pos, BInvokableSymbol invokableSymbol,
                                                 List<BLangExpression> requiredArgs, SymbolResolver symResolver) {
-        return createInvocationExprMethod(pos, invokableSymbol, requiredArgs, new ArrayList<>(), new ArrayList<>(),
+        return createInvocationExprMethod(pos, invokableSymbol, requiredArgs, new ArrayList<>(),
                 symResolver);
     }
 
     static BLangInvocation createInvocationExprMethod(DiagnosticPos pos, BInvokableSymbol invokableSymbol,
                                                       List<BLangExpression> requiredArgs,
-                                                      List<BLangSimpleVariable> namedArgs,
                                                       List<BLangSimpleVariable> restArgs, SymbolResolver symResolver) {
         final BLangInvocation invokeLambda = (BLangInvocation) TreeBuilder.createInvocationNode();
         invokeLambda.pos = pos;
         invokeLambda.requiredArgs.addAll(requiredArgs);
-        invokeLambda.namedArgs
-                .addAll(generateArgExprs(pos, namedArgs, invokableSymbol.defaultableParams, symResolver));
+//        invokeLambda.namedArgs
+//                .addAll(generateArgExprs(pos, namedArgs, invokableSymbol.defaultableParams, symResolver));
         invokeLambda.restArgs
                 .addAll(generateArgExprs(pos, restArgs, Lists.of(invokableSymbol.restParam), symResolver));
 
@@ -794,9 +816,9 @@ public class ASTBuilderUtil {
         dupFuncSymbol.receiverSymbol = invokableSymbol.receiverSymbol;
         dupFuncSymbol.retType = invokableSymbol.retType;
 
-        dupFuncSymbol.defaultableParams = invokableSymbol.defaultableParams.stream()
-                .map(param -> duplicateParamSymbol(param, dupFuncSymbol))
-                .collect(Collectors.toList());
+//        dupFuncSymbol.defaultableParams = invokableSymbol.defaultableParams.stream()
+//                .map(param -> duplicateParamSymbol(param, dupFuncSymbol))
+//                .collect(Collectors.toList());
         dupFuncSymbol.params = invokableSymbol.params.stream()
                 .map(param -> duplicateParamSymbol(param, dupFuncSymbol))
                 .collect(Collectors.toList());

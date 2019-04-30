@@ -1946,7 +1946,7 @@ public class CodeGenerator extends BLangNodeVisitor {
     private Operand[] getFuncOperands(BLangInvocation iExpr, int funcRefCPIndex) {
         // call funcRefCPIndex, nArgRegs, argRegs[nArgRegs], nRetRegs, retRegs[nRetRegs]
         int i = 0;
-        int nArgRegs = iExpr.requiredArgs.size() + iExpr.namedArgs.size() + iExpr.restArgs.size();
+        int nArgRegs = iExpr.requiredArgs.size() + iExpr.restArgs.size();
         int nRetRegs = 1; // TODO Improve balx format and VM side
         int flags = FunctionFlags.NOTHING;
         Operand[] operands = new Operand[nArgRegs + nRetRegs + 4];
@@ -1966,7 +1966,7 @@ public class CodeGenerator extends BLangNodeVisitor {
         }
 
         // Write named arguments
-        i = generateNamedArgs(iExpr, operands, i);
+//        i = generateNamedArgs(iExpr, operands, i);
 
         // Write rest arguments
         for (BLangExpression argExpr : iExpr.restArgs) {
@@ -1982,17 +1982,17 @@ public class CodeGenerator extends BLangNodeVisitor {
     }
 
     private int generateNamedArgs(BLangInvocation iExpr, Operand[] operands, int currentIndex) {
-        if (iExpr.namedArgs.isEmpty()) {
-            return currentIndex;
-        }
+//        if (iExpr.namedArgs.isEmpty()) {
+//            return currentIndex;
+//        }
 
         if (iExpr.symbol.kind != SymbolKind.FUNCTION) {
             throw new IllegalStateException("Unsupported callable unit");
         }
 
-        for (BLangExpression argExpr : iExpr.namedArgs) {
-            operands[currentIndex++] = genNode(argExpr, this.env).regIndex;
-        }
+//        for (BLangExpression argExpr : iExpr.namedArgs) {
+//            operands[currentIndex++] = genNode(argExpr, this.env).regIndex;
+//        }
 
         return currentIndex;
     }

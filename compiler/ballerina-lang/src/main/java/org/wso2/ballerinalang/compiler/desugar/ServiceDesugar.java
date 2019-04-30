@@ -187,7 +187,7 @@ public class ServiceDesugar {
         final BLangInvocation methodInvocation =
                 ASTBuilderUtil.createInvocationExprForMethod(pos, methodRefSymbol, args, symResolver);
         methodInvocation.expr = varRef;
-        methodInvocation.namedArgs.addAll(namedArgs);
+//        methodInvocation.namedArgs.addAll(namedArgs);
 
         BLangExpression rhsExpr = methodInvocation;
         // Add optional check.

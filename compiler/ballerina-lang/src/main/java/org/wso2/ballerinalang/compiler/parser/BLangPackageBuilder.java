@@ -2932,10 +2932,10 @@ public class BLangPackageBuilder {
         defaultableParam.pos = pos;
         defaultableParam.addWS(ws);
         List<BLangVariable> params = this.varListStack.peek();
-        BLangSimpleVariable var = (BLangSimpleVariable) params.remove(params.size() - 1);
+        BLangSimpleVariable var = (BLangSimpleVariable) params.get(params.size() - 1);
         var.expr = (BLangExpression) this.exprNodeStack.pop();
-        defaultableParam.var = var;
-        this.defaultableParamsList.add(defaultableParam);
+//        defaultableParam.var = var;
+//        this.defaultableParamsList.add(defaultableParam);
     }
 
     void addRestParam(DiagnosticPos pos, Set<Whitespace> ws, String identifier, int annotCount) {

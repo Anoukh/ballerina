@@ -232,6 +232,15 @@ public class Types {
         return type.tag == TypeTags.ERROR;
     }
 
+    public boolean containsNilType(BType type) {
+        if (type.tag == TypeTags.UNION) {
+            return ((BUnionType) type).getMemberTypes().stream()
+                    .anyMatch(this::containsNilType);
+        }
+
+        return type.tag == TypeTags.NIL;
+    }
+
     public boolean isAnydata(BType type) {
         return isAnydata(type, new HashSet<>());
     }

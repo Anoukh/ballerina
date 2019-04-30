@@ -1472,10 +1472,10 @@ public class CodeAnalyzer extends BLangNodeVisitor {
     public void visit(BLangInvocation invocationExpr) {
         analyzeExpr(invocationExpr.expr);
         analyzeExprs(invocationExpr.requiredArgs);
-        analyzeExprs(invocationExpr.namedArgs);
+//        analyzeExprs(invocationExpr.namedArgs);
         analyzeExprs(invocationExpr.restArgs);
 
-        checkDuplicateNamedArgs(invocationExpr.namedArgs);
+//        checkDuplicateNamedArgs(invocationExpr.namedArgs);
 
         // Null check is to ignore Negative path where symbol does not get resolved at TypeChecker.
         if ((invocationExpr.symbol != null) && invocationExpr.symbol.kind == SymbolKind.FUNCTION) {

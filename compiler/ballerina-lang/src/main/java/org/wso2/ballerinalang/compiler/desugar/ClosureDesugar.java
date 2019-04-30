@@ -388,7 +388,7 @@ public class ClosureDesugar extends BLangNodeVisitor {
             iExpr.requiredArgs.set(0, iExpr.expr);
         }
         iExpr.requiredArgs = rewriteExprs(iExpr.requiredArgs);
-        iExpr.namedArgs = rewriteExprs(iExpr.namedArgs);
+//        iExpr.namedArgs = rewriteExprs(iExpr.namedArgs);
         iExpr.restArgs = rewriteExprs(iExpr.restArgs);
         result = iExpr;
     }
@@ -630,7 +630,6 @@ public class ClosureDesugar extends BLangNodeVisitor {
     public void visit(BLangInvocation iExpr) {
         iExpr.expr = rewriteExpr(iExpr.expr);
         iExpr.requiredArgs = rewriteExprs(iExpr.requiredArgs);
-        iExpr.namedArgs = rewriteExprs(iExpr.namedArgs);
         iExpr.restArgs = rewriteExprs(iExpr.restArgs);
         result = iExpr;
     }
@@ -1126,7 +1125,6 @@ public class ClosureDesugar extends BLangNodeVisitor {
     public void visit(BLangInvocation.BFunctionPointerInvocation fpInvocation) {
         fpInvocation.expr = rewriteExpr(fpInvocation.expr);
         fpInvocation.requiredArgs = rewriteExprs(fpInvocation.requiredArgs);
-        fpInvocation.namedArgs = rewriteExprs(fpInvocation.namedArgs);
         fpInvocation.restArgs = rewriteExprs(fpInvocation.restArgs);
         result = fpInvocation;
     }
@@ -1215,7 +1213,6 @@ public class ClosureDesugar extends BLangNodeVisitor {
     public void visit(BLangInvocation.BLangBuiltInMethodInvocation iExpr) {
         iExpr.expr = rewriteExpr(iExpr.expr);
         iExpr.requiredArgs = rewriteExprs(iExpr.requiredArgs);
-        iExpr.namedArgs = rewriteExprs(iExpr.namedArgs);
         iExpr.restArgs = rewriteExprs(iExpr.restArgs);
         result = iExpr;
     }

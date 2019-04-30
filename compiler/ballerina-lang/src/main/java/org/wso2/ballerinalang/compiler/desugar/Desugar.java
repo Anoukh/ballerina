@@ -566,9 +566,59 @@ public class Desugar extends BLangNodeVisitor {
 
         // Duplicate the invokable symbol and the invokable type.
         funcNode.originalFuncSymbol = funcNode.symbol;
-        BInvokableSymbol dupFuncSymbol = ASTBuilderUtil.duplicateInvokableSymbol(funcNode.symbol);
-        funcNode.symbol = dupFuncSymbol;
+        funcNode.symbol = ASTBuilderUtil.duplicateInvokableSymbol(funcNode.symbol);
 
+        BInvokableType bInvokableType = (BInvokableType) funcNode.symbol.type;
+        BLangBlockStmt blockStmt = ASTBuilderUtil.createBlockStmt(funcNode.pos);
+
+        List<BVarSymbol> params = new ArrayList<>();
+        for (int i = 0; i < funcNode.symbol.params.size(); i++) {
+            BVarSymbol paramSymbol = funcNode.symbol.params.get(i);
+            if (paramSymbol.defaultExpression != null) {
+                // Create a boolean variable to indicate if the caller has passed in a value to the default-able param
+                String existsVariableName = ("$").concat(paramSymbol.name.value).concat("_exists");
+                BLangSimpleVariable existsVariable =
+                        ASTBuilderUtil.createVariable(funcNode.pos, existsVariableName, symTable.booleanType);
+                ASTBuilderUtil.defineVariable(existsVariable, funcNode.symbol, names);
+                params.add(existsVariable.symbol);
+                bInvokableType.paramTypes.add(i, existsVariable.type);
+
+                // Actual symbol added to list so as to desugar into the function body with logic to decide default val.
+                BVarSymbol actualVarSymbol = paramSymbol;
+                BLangSimpleVariable actualVariable = ASTBuilderUtil.createVariable(
+                        funcNode.pos, paramSymbol.name.value, paramSymbol.type, null, paramSymbol);
+                blockStmt.addStatement(ASTBuilderUtil.createVariableDef(funcNode.pos, actualVariable));
+
+                // Creating a duplicate variable to which a value may or may not be passed in by the caller.
+                String shadowVariable = ("$").concat(paramSymbol.name.value);
+                BLangSimpleVariable duplicateVar = ASTBuilderUtil.createVariable(funcNode.pos, shadowVariable, paramSymbol.type);
+                ASTBuilderUtil.defineVariable(duplicateVar, funcNode.symbol, names);
+
+                if (!types.containsNilType(duplicateVar.type)) {
+                    BUnionType unionType = BUnionType.create(null, duplicateVar.type, symTable.nilType);
+                    duplicateVar.symbol.type = duplicateVar.type = unionType;
+                    bInvokableType.paramTypes.set(i+1, unionType);
+                }
+
+                BLangExpression variableRef = addConversionExprIfRequired(ASTBuilderUtil.
+                        createVariableRef(funcNode.pos, duplicateVar.symbol), actualVariable.type);
+
+                actualVariable.expr = ASTBuilderUtil.createTernaryExpr(funcNode.pos, actualVariable.type,
+                        ASTBuilderUtil.createVariableRef(funcNode.pos, existsVariable.symbol),
+                        variableRef, actualVarSymbol.defaultExpression);
+
+                funcNode.requiredParams.set(i, duplicateVar);
+                paramSymbol = duplicateVar.symbol;
+            }
+            params.add(paramSymbol);
+        }
+
+        funcNode.symbol.params = params;
+        if (funcNode.body == null) {
+            funcNode.body = blockStmt;
+        } else {
+            funcNode.body.stmts.add(0, blockStmt);
+        }
         funcNode.body = rewrite(funcNode.body, fucEnv);
         funcNode.workers = rewrite(funcNode.workers, fucEnv);
 
@@ -2245,7 +2295,6 @@ public class Desugar extends BLangNodeVisitor {
         // Reorder the arguments to match the original function signature.
         reorderArguments(iExpr);
         iExpr.requiredArgs = rewriteExprs(iExpr.requiredArgs);
-        iExpr.namedArgs = rewriteExprs(iExpr.namedArgs);
         iExpr.restArgs = rewriteExprs(iExpr.restArgs);
 
         if (iExpr.functionPointerInvocation) {
@@ -2286,7 +2335,7 @@ public class Desugar extends BLangNodeVisitor {
                 List<BLangExpression> argExprs = new ArrayList<>(iExpr.requiredArgs);
                 argExprs.add(0, iExpr.expr);
                 final BLangAttachedFunctionInvocation attachedFunctionInvocation =
-                        new BLangAttachedFunctionInvocation(iExpr.pos, argExprs, iExpr.namedArgs, iExpr.restArgs,
+                        new BLangAttachedFunctionInvocation(iExpr.pos, argExprs, iExpr.restArgs,
                                 iExpr.symbol, iExpr.type, iExpr.expr, iExpr.async);
                 attachedFunctionInvocation.actionInvocation = iExpr.actionInvocation;
                 attachedFunctionInvocation.name = iExpr.name;
@@ -3575,7 +3624,7 @@ public class Desugar extends BLangNodeVisitor {
                                                               SymTag.FUNCTION);
         BLangInvocation invocationExprMethod = ASTBuilderUtil
                 .createInvocationExprMethod(pos, invokableSymbol, requiredArgs,
-                                            new ArrayList<>(), new ArrayList<>(), symResolver);
+                                            new ArrayList<>(), symResolver);
         return rewrite(invocationExprMethod, env);
     }
 
@@ -3644,7 +3693,7 @@ public class Desugar extends BLangNodeVisitor {
                     .lookupSymbol(symTable.pkgEnvMap.get(symTable.builtInPackageSymbol),
                                   names.fromString(BLangBuiltInMethod.STRING_LENGTH.getName()), SymTag.FUNCTION);
             return ASTBuilderUtil.createInvocationExprMethod(iExpr.pos, bInvokableSymbol, Lists.of(iExpr.expr),
-                                                             new ArrayList<>(), new ArrayList<>(), symResolver);
+                                                             new ArrayList<>(), symResolver);
         }
         return visitUtilMethodInvocation(iExpr.pos, BLangBuiltInMethod.LENGTH, Lists.of(iExpr.expr));
     }
@@ -3841,13 +3890,11 @@ public class Desugar extends BLangNodeVisitor {
             return;
         }
 
-        BInvokableSymbol invocableSymbol = (BInvokableSymbol) symbol;
-        if (invocableSymbol.defaultableParams != null && !invocableSymbol.defaultableParams.isEmpty()) {
-            // Re-order the named args
-            reorderNamedArgs(iExpr, invocableSymbol);
-        }
+        BInvokableSymbol invokableSymbol = (BInvokableSymbol) symbol;
 
-        if (invocableSymbol.restParam == null) {
+        reorderNamedArgs(iExpr, invokableSymbol);
+
+        if (invokableSymbol.restParam == null) {
             return;
         }
 
@@ -3859,31 +3906,45 @@ public class Desugar extends BLangNodeVisitor {
         }
         BLangArrayLiteral arrayLiteral = (BLangArrayLiteral) TreeBuilder.createArrayLiteralNode();
         arrayLiteral.exprs = iExpr.restArgs;
-        arrayLiteral.type = invocableSymbol.restParam.type;
+        arrayLiteral.type = invokableSymbol.restParam.type;
         iExpr.restArgs = new ArrayList<>();
         iExpr.restArgs.add(arrayLiteral);
     }
 
     private void reorderNamedArgs(BLangInvocation iExpr, BInvokableSymbol invokableSymbol) {
-        Map<String, BLangExpression> namedArgs = new HashMap<>();
-        iExpr.namedArgs.forEach(expr -> namedArgs.put(((NamedArgNode) expr).getName().value, expr));
-
-        // Re-order the named arguments
         List<BLangExpression> args = new ArrayList<>();
-        for (BVarSymbol param : invokableSymbol.defaultableParams) {
-            // If some named parameter is not passed when invoking the function, get the 
-            // default value for that parameter from the parameter symbol.
-            BLangExpression expr;
-            if (namedArgs.containsKey(param.name.value)) {
-                expr = namedArgs.get(param.name.value);
+        Map<String, BLangExpression> namedArgs = new HashMap<>();
+        iExpr.requiredArgs.forEach(expr -> {
+            if (expr.getKind() == NodeKind.NAMED_ARGS_EXPR) {
+                namedArgs.put(((NamedArgNode) expr).getName().value, expr);
             } else {
-                int paramTypeTag = param.type.tag;
-                expr = getDefaultValueLiteral(param.defaultValue, paramTypeTag);
-                expr = addConversionExprIfRequired(expr, param.type);
+
+                args.add(expr);
             }
-            args.add(expr);
+        });
+
+        List<BVarSymbol> params = invokableSymbol.params;
+        // Iterate over invokable parameters starting from the named arguments
+        for (int i = args.size(); i < params.size(); i++) {
+            BVarSymbol param = params.get(i);
+            if (namedArgs.containsKey(param.name.value)) {
+                // If parameter is given as a named argument, add that and a boolean indicating the value is present
+                BLangExpression namedArg = namedArgs.get(param.name.value);
+                if (param.defaultExpression != null) {
+                    args.add(ASTBuilderUtil.createLiteral(null, symTable.booleanType, true));
+                    namedArg = addConversionExprIfRequired(namedArg, symTable.anyType);
+                }
+                args.add(namedArg);
+            } else {
+                if (param.defaultExpression != null) {
+                    // Else add a nil value and a boolean indicating the value is not present
+                    args.add(ASTBuilderUtil.createLiteral(null, symTable.booleanType, false));
+                    args.add(ASTBuilderUtil.createLiteral(null, symTable.nilType, null));
+                }
+            }
         }
-        iExpr.namedArgs = args;
+
+        iExpr.requiredArgs = args;
     }
 
     private BLangMatchTypedBindingPatternClause getSafeAssignErrorPattern(

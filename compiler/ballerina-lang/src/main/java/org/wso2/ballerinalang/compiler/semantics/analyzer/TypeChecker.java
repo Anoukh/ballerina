@@ -2535,7 +2535,8 @@ public class TypeChecker extends BLangNodeVisitor {
             // And assume that named params and rest params are not supported.
             requiredParamsCount = paramTypes.size();
         } else {
-            requiredParamsCount = ((BInvokableSymbol) iExpr.symbol).params.size();
+            requiredParamsCount = ((BInvokableSymbol) iExpr.symbol).params.size() +
+                    ((BInvokableSymbol) iExpr.symbol).defaultableParams.size();
         }
 
         iExpr.requiredArgs = new ArrayList<>();
@@ -2543,16 +2544,25 @@ public class TypeChecker extends BLangNodeVisitor {
         // Split the different argument types: required args, named args and rest args
         int i = 0;
         BLangExpression vararg = null;
+        boolean foundNamedArg = false;
         for (BLangExpression expr : iExpr.argExprs) {
             switch (expr.getKind()) {
-                case NAMED_ARGS_EXPR:
-                    iExpr.namedArgs.add(expr);
-                    break;
                 case REST_ARGS_EXPR:
+                    if (foundNamedArg) {
+                        dlog.error(expr.pos, DiagnosticCode.REST_ARG_NOT_ALLOWED_WITH_NAMED_ARGS);
+                    }
                     vararg = expr;
+                    break;
+                case NAMED_ARGS_EXPR:
+                    foundNamedArg = true;
+                    iExpr.requiredArgs.add(expr);
+                    i++;
                     break;
                 default:
                     if (i < requiredParamsCount) {
+                        if (foundNamedArg) {
+                            dlog.error(expr.pos, DiagnosticCode.POSITIONAL_ARG_NOT_ALLOWED);
+                        }
                         iExpr.requiredArgs.add(expr);
                     } else {
                         iExpr.restArgs.add(expr);
@@ -2562,35 +2572,37 @@ public class TypeChecker extends BLangNodeVisitor {
             }
         }
 
-        return checkInvocationArgs(iExpr, paramTypes, requiredParamsCount, vararg);
+        return checkInvocationArgs(iExpr, requiredParamsCount, vararg);
     }
 
-    private BType checkInvocationArgs(BLangInvocation iExpr, List<BType> paramTypes, int requiredParamsCount,
-                                      BLangExpression vararg) {
+    private BType checkInvocationArgs(BLangInvocation iExpr, int requiredParamsCount, BLangExpression vararg) {
+        // TODO: Refactor this logic
         BType actualType = symTable.semanticError;
-        BInvokableSymbol invocableSymbol = (BInvokableSymbol) iExpr.symbol;
+        BInvokableSymbol invokableSymbol = (BInvokableSymbol) iExpr.symbol;
 
         // Check whether the expected param count and the actual args counts are matching.
-        if (requiredParamsCount > iExpr.requiredArgs.size()) {
-            dlog.error(iExpr.pos, DiagnosticCode.NOT_ENOUGH_ARGS_FUNC_CALL, iExpr.name.value);
-            return actualType;
-        } else if (invocableSymbol.restParam == null && (vararg != null || !iExpr.restArgs.isEmpty())) {
-            if (invocableSymbol.defaultableParams.isEmpty()) {
-                dlog.error(iExpr.pos, DiagnosticCode.TOO_MANY_ARGS_FUNC_CALL, iExpr.name.value);
-            } else {
-                dlog.error(iExpr.pos, DiagnosticCode.DEFAULTABLE_ARG_PASSED_AS_REQUIRED_ARG, iExpr.name.value);
-            }
-            return actualType;
-        }
 
-        checkRequiredArgs(iExpr.requiredArgs, paramTypes);
-        checkNamedArgs(iExpr.namedArgs, invocableSymbol.defaultableParams);
-        checkRestArgs(iExpr.restArgs, vararg, invocableSymbol.restParam);
+
+
+//        if (requiredParamsCount > iExpr.requiredArgs.size()) {
+//            dlog.error(iExpr.pos, DiagnosticCode.NOT_ENOUGH_ARGS_FUNC_CALL, iExpr.name.value);
+//            return actualType;
+//        } else if (invokableSymbol.restParam == null && (vararg != null || !iExpr.restArgs.isEmpty())) {
+//            if (invokableSymbol.defaultableParams.isEmpty()) {
+//                dlog.error(iExpr.pos, DiagnosticCode.TOO_MANY_ARGS_FUNC_CALL, iExpr.name.value);
+//            } else {
+//                dlog.error(iExpr.pos, DiagnosticCode.DEFAULTABLE_ARG_PASSED_AS_REQUIRED_ARG, iExpr.name.value);
+//            }
+//            return actualType;
+//        }
+
+        checkNonRestArgs(iExpr.requiredArgs, invokableSymbol.params);
+        checkRestArgs(iExpr.restArgs, vararg, invokableSymbol.restParam);
 
         if (iExpr.async) {
-            return this.generateFutureType(invocableSymbol);
+            return this.generateFutureType(invokableSymbol);
         } else {
-            return getSafeType(invocableSymbol.type, iExpr).getReturnType();
+            return getSafeType(invokableSymbol.type, iExpr).getReturnType();
         }
     }
 
@@ -2600,25 +2612,23 @@ public class TypeChecker extends BLangNodeVisitor {
         return new BFutureType(TypeTags.FUTURE, retType, null, isWorkerStart);
     }
 
-    private void checkRequiredArgs(List<BLangExpression> requiredArgExprs, List<BType> requiredParamTypes) {
-        for (int i = 0; i < requiredArgExprs.size(); i++) {
-            checkExpr(requiredArgExprs.get(i), this.env, requiredParamTypes.get(i));
-        }
-    }
-
-    private void checkNamedArgs(List<BLangExpression> namedArgExprs, List<BVarSymbol> defaultableParams) {
-        for (BLangExpression expr : namedArgExprs) {
-            BLangIdentifier argName = ((NamedArgNode) expr).getName();
-            BVarSymbol varSym = defaultableParams.stream()
-                    .filter(param -> param.getName().value.equals(argName.value))
-                    .findAny()
-                    .orElse(null);
-            if (varSym == null) {
-                dlog.error(expr.pos, DiagnosticCode.UNDEFINED_PARAMETER, argName);
-                break;
+    private void checkNonRestArgs(List<BLangExpression> argExprs, List<BVarSymbol> requiredParams) {
+        for (int i = 0; i < argExprs.size(); i++) {
+            BLangExpression argExpr = argExprs.get(i);
+            if (argExpr.getKind() == NodeKind.NAMED_ARGS_EXPR) {
+                BLangIdentifier argName = ((NamedArgNode) argExpr).getName();
+                BVarSymbol varSym = requiredParams.stream()
+                        .filter(param -> param.getName().value.equals(argName.value))
+                        .findAny()
+                        .orElse(null);
+                if (varSym == null) {
+                    dlog.error(argExpr.pos, DiagnosticCode.UNDEFINED_PARAMETER, argName);
+                    break;
+                }
+                checkExpr(argExpr, this.env, varSym.type);
+            } else {
+                checkExpr(argExprs.get(i), this.env, requiredParams.get(i).type);
             }
-
-            checkExpr(expr, this.env, varSym.type);
         }
     }
 

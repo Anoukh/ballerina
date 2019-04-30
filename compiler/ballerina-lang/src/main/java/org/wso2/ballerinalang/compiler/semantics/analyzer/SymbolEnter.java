@@ -1292,41 +1292,50 @@ public class SymbolEnter extends BLangNodeVisitor {
 
     private void defineInvokableSymbolParams(BLangInvokableNode invokableNode, BInvokableSymbol invokableSymbol,
                                              SymbolEnv invokableEnv) {
-        List<BVarSymbol> paramSymbols =
-                invokableNode.requiredParams.stream()
-                        .peek(varNode -> defineNode(varNode, invokableEnv))
-                        .map(varNode -> varNode.symbol)
-                        .collect(Collectors.toList());
+        List<BVarSymbol> paramSymbols = new ArrayList<>();
+        boolean foundDefaulatableParam = false;
+        for (BLangSimpleVariable varNode : invokableNode.requiredParams) {
+            defineNode(varNode, invokableEnv);
+            if (varNode.expr != null) {
+                varNode.symbol.defaultExpression = varNode.expr;
+                foundDefaulatableParam = true;
+            } else if (foundDefaulatableParam) {
+                dlog.error(varNode.pos, DiagnosticCode.POSITIONAL_ARG_NOT_ALLOWED);
+            }
+            BVarSymbol symbol = varNode.symbol;
+            paramSymbols.add(symbol);
+        }
 
-        List<BVarSymbol> namedParamSymbols =
-                invokableNode.defaultableParams.stream()
-                        .peek(varDefNode -> defineNode(varDefNode.var, invokableEnv))
-                        .map(varDefNode -> {
-                            BVarSymbol varSymbol = varDefNode.var.symbol;
-                            if (varDefNode.var.expr.getKind() != NodeKind.LITERAL &&
-                                    varDefNode.var.expr.getKind() != NodeKind.NUMERIC_LITERAL) {
-                                this.dlog.error(varDefNode.var.expr.pos, DiagnosticCode.INVALID_DEFAULT_PARAM_VALUE,
-                                        varDefNode.var.name);
-                            } else {
-                                BLangLiteral literal = (BLangLiteral) varDefNode.var.expr;
-                                varSymbol.defaultValue = new DefaultValueLiteral(literal.value, literal.type.tag);
-                            }
-                            return varSymbol;
-                        })
-                        .collect(Collectors.toList());
+//        List<BVarSymbol> namedParamSymbols =
+//                invokableNode.defaultableParams.stream()
+//                        .peek(varDefNode -> defineNode(varDefNode.var, invokableEnv))
+//                        .map(varDefNode -> {
+//                            BVarSymbol varSymbol = varDefNode.var.symbol;
+//                            if (varDefNode.var.expr.getKind() != NodeKind.LITERAL &&
+//                                    varDefNode.var.expr.getKind() != NodeKind.NUMERIC_LITERAL) {
+//                                this.dlog.error(varDefNode.var.expr.pos, DiagnosticCode.INVALID_DEFAULT_PARAM_VALUE,
+//                                        varDefNode.var.name);
+//                            } else {
+//                                BLangLiteral literal = (BLangLiteral) varDefNode.var.expr;
+//                                varSymbol.defaultValue = new DefaultValueLiteral(literal.value, literal.type.tag);
+//                            }
+//                            return varSymbol;
+//                        })
+//                        .collect(Collectors.toList());
 
         if (!invokableNode.desugaredReturnType) {
             symResolver.resolveTypeNode(invokableNode.returnTypeNode, invokableEnv);
         }
         invokableSymbol.params = paramSymbols;
         invokableSymbol.retType = invokableNode.returnTypeNode.type;
-        invokableSymbol.defaultableParams = namedParamSymbols;
+//        invokableSymbol.params.addAll(namedParamSymbols);
+//        invokableSymbol.defaultableParams = namedParamSymbols;
 
         // Create function type
         List<BType> paramTypes = paramSymbols.stream()
                 .map(paramSym -> paramSym.type)
                 .collect(Collectors.toList());
-        namedParamSymbols.forEach(paramSymbol -> paramTypes.add(paramSymbol.type));
+//        namedParamSymbols.forEach(paramSymbol -> paramTypes.add(paramSymbol.type));
 
         if (invokableNode.restParam != null) {
             defineNode(invokableNode.restParam, invokableEnv);
