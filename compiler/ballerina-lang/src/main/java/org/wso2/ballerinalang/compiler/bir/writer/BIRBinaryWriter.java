@@ -26,6 +26,7 @@ import org.wso2.ballerinalang.compiler.bir.model.BIRNode.BIRParameter;
 import org.wso2.ballerinalang.compiler.bir.model.BIRNode.BIRTypeDefinition;
 import org.wso2.ballerinalang.compiler.bir.model.BIRNode.ConstValue;
 import org.wso2.ballerinalang.compiler.bir.model.BIRNode.TaintTable;
+import org.wso2.ballerinalang.compiler.bir.model.VarKind;
 import org.wso2.ballerinalang.compiler.bir.writer.CPEntry.FloatCPEntry;
 import org.wso2.ballerinalang.compiler.bir.writer.CPEntry.IntegerCPEntry;
 import org.wso2.ballerinalang.compiler.bir.writer.CPEntry.PackageCPEntry;
@@ -214,11 +215,14 @@ public class BIRBinaryWriter {
         birbuf.writeInt(birFunction.argsCount);
         // Local variables
 
-        birbuf.writeBoolean(birFunction.returnVariable != null);
-        if (birFunction.returnVariable != null) {
-            birbuf.writeByte(birFunction.returnVariable.kind.getValue());
-            funcTypeWriter.visitType(birFunction.returnVariable.type);
-            birbuf.writeInt(addStringCPEntry(birFunction.returnVariable.name.value));
+        boolean hasReturn = birFunction.localVars.size() > 0 && birFunction.localVars.get(0).kind == VarKind.RETURN;
+        birbuf.writeBoolean(hasReturn);
+
+        if (hasReturn) {
+            BIRNode.BIRVariableDcl birVariableDcl = birFunction.localVars.get(0);
+            birbuf.writeByte(birVariableDcl.kind.getValue());
+            funcTypeWriter.visitType(birVariableDcl.type);
+            birbuf.writeInt(addStringCPEntry(birVariableDcl.name.value));
         }
 
         birbuf.writeInt(birFunction.parameters.size());
@@ -229,8 +233,11 @@ public class BIRBinaryWriter {
             birbuf.writeBoolean(param.hasDefaultExpr);
         }
 
-        birbuf.writeInt(birFunction.localVars.size());
-        for (BIRNode.BIRVariableDcl localVar : birFunction.localVars) {
+        birbuf.writeInt(hasReturn ? birFunction.localVars.size() - 1 : birFunction.localVars.size());
+
+        List<BIRNode.BIRVariableDcl> localVars = birFunction.localVars;
+        for (int i = hasReturn ? 1 : 0; i < localVars.size(); i++) {
+            BIRNode.BIRVariableDcl localVar = localVars.get(i);
             birbuf.writeByte(localVar.kind.getValue());
             funcTypeWriter.visitType(localVar.type);
             birbuf.writeInt(addStringCPEntry(localVar.name.value));

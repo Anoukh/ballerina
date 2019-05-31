@@ -271,8 +271,6 @@ public abstract class BIRNode {
          */
         public List<BIRVariableDcl> localVars;
 
-        public BIRVariableDcl returnVariable;
-
         /**
          * Variable used for parameters of this function.
          */

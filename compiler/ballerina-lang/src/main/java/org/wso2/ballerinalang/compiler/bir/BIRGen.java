@@ -350,7 +350,7 @@ public class BIRGen extends BLangNodeVisitor {
             // Special %0 location for storing return values
             BIRVariableDcl retVarDcl = new BIRVariableDcl(astFunc.pos, astFunc.symbol.retType,
                     this.env.nextLocalVarId(names), VarScope.FUNCTION, VarKind.RETURN);
-            birFunc.returnVariable = retVarDcl;
+            birFunc.localVars.add(retVarDcl);
         }
 
         //add closure vars
@@ -814,7 +814,7 @@ public class BIRGen extends BLangNodeVisitor {
     public void visit(BLangReturn astReturnStmt) {
         if (astReturnStmt.expr.type.tag != TypeTags.NIL) {
             astReturnStmt.expr.accept(this);
-            BIROperand retVarRef = new BIROperand(this.env.enclFunc.returnVariable);
+            BIROperand retVarRef = new BIROperand(this.env.enclFunc.localVars.get(0));
             emit(new Move(astReturnStmt.pos, this.env.targetOperand, retVarRef));
         }
 

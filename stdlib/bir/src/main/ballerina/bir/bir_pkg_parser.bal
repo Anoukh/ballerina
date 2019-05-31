@@ -113,8 +113,8 @@ public type PackageParser object {
         var argsCount = self.reader.readInt32();
 
         VariableDcl?[] dcls = [];
-        var haveReturn = self.reader.readBoolean();
-        if (haveReturn) {
+        var hasReturn = self.reader.readBoolean();
+        if (hasReturn) {
             var dcl = self.parseVariableDcl();
             dcls[dcls.length()] = dcl;
             localVarMap[dcl.name.value] = dcl;
