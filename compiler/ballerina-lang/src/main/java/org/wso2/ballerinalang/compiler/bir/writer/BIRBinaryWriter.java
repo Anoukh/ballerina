@@ -26,6 +26,7 @@ import org.wso2.ballerinalang.compiler.bir.model.BIRNode.BIRParameter;
 import org.wso2.ballerinalang.compiler.bir.model.BIRNode.BIRTypeDefinition;
 import org.wso2.ballerinalang.compiler.bir.model.BIRNode.ConstValue;
 import org.wso2.ballerinalang.compiler.bir.model.BIRNode.TaintTable;
+import org.wso2.ballerinalang.compiler.bir.model.VarKind;
 import org.wso2.ballerinalang.compiler.bir.writer.CPEntry.FloatCPEntry;
 import org.wso2.ballerinalang.compiler.bir.writer.CPEntry.IntegerCPEntry;
 import org.wso2.ballerinalang.compiler.bir.writer.CPEntry.PackageCPEntry;
@@ -214,12 +215,37 @@ public class BIRBinaryWriter {
         // Arg count
         birbuf.writeInt(birFunction.argsCount);
         // Local variables
-        birbuf.writeInt(birFunction.localVars.size());
-        for (BIRNode.BIRVariableDcl localVar : birFunction.localVars) {
+
+        boolean hasReturn = birFunction.localVars.size() > 0 && birFunction.localVars.get(0).kind == VarKind.RETURN;
+        birbuf.writeBoolean(hasReturn);
+
+        if (hasReturn) {
+            BIRNode.BIRVariableDcl birVariableDcl = birFunction.localVars.get(0);
+            birbuf.writeByte(birVariableDcl.kind.getValue());
+            funcTypeWriter.visitType(birVariableDcl.type);
+            birbuf.writeInt(addStringCPEntry(birVariableDcl.name.value));
+        }
+
+        birbuf.writeInt(birFunction.parameters.size());
+        for (BIRNode.BIRFunctionParameter param : birFunction.parameters.keySet()) {
+            birbuf.writeByte(param.kind.getValue());
+            funcTypeWriter.visitType(param.type);
+            birbuf.writeInt(addStringCPEntry(param.name.value));
+            birbuf.writeBoolean(param.hasDefaultExpr);
+        }
+
+        birbuf.writeInt(hasReturn ? birFunction.localVars.size() - 1 : birFunction.localVars.size());
+
+        List<BIRNode.BIRVariableDcl> localVars = birFunction.localVars;
+        for (int i = hasReturn ? 1 : 0; i < localVars.size(); i++) {
+            BIRNode.BIRVariableDcl localVar = localVars.get(i);
             birbuf.writeByte(localVar.kind.getValue());
             writeType(birbuf, localVar.type);
             birbuf.writeInt(addStringCPEntry(localVar.name.value));
         }
+
+        // Write basic blocks related to parameter default values
+        birFunction.parameters.values().stream().filter(bbList -> !bbList.isEmpty()).forEach(funcInsWriter::writeBBs);
 
         // Write basic blocks
         funcInsWriter.writeBBs(birFunction.basicBlocks);

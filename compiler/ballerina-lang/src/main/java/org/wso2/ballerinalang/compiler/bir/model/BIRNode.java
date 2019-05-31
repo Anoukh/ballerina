@@ -117,6 +117,7 @@ public abstract class BIRNode {
         public Name name;
         public VarKind kind;
         public VarScope scope;
+        public boolean ignoreVariable;
 
         public BIRVariableDcl(DiagnosticPos pos, BType type, Name name, VarScope scope, VarKind kind) {
             super(pos);
@@ -173,6 +174,26 @@ public abstract class BIRNode {
                                     Name name, VarScope scope, VarKind kind) {
             super(pos, type, name, scope, kind);
             this.visibility = visibility;
+        }
+
+        @Override
+        public void accept(BIRVisitor visitor) {
+            visitor.visit(this);
+        }
+    }
+
+    /**
+     * A function parameter declaration.
+     *
+     * @since 0.995.0
+     */
+    public static class BIRFunctionParameter extends BIRVariableDcl {
+        public final boolean hasDefaultExpr;
+
+        public BIRFunctionParameter(DiagnosticPos pos, BType type, Name name,
+                                    VarScope scope, VarKind kind, boolean hasDefaultExpr) {
+            super(pos, type, name, scope, kind);
+            this.hasDefaultExpr = hasDefaultExpr;
         }
 
         @Override
@@ -251,6 +272,11 @@ public abstract class BIRNode {
         public List<BIRVariableDcl> localVars;
 
         /**
+         * Variable used for parameters of this function.
+         */
+        public Map<BIRFunctionParameter, List<BIRBasicBlock>>  parameters;
+
+        /**
          * List of basic blocks in this function.
          */
         public List<BIRBasicBlock> basicBlocks;
@@ -282,6 +308,7 @@ public abstract class BIRNode {
             this.visibility = visibility;
             this.type = type;
             this.localVars = new ArrayList<>();
+            this.parameters = new LinkedHashMap<>();
             this.requiredParams = new ArrayList<>();
             this.defaultParams = new ArrayList<>();
             this.receiverType = receiverType;
